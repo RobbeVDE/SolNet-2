@@ -2,10 +2,13 @@ from ftplib import FTP
 import os
 import xarray as xr
 import time
-start_time = time.time()
+import pandas as pd
+start_timing = time.time()
 latitude = 51.0
 longitude = 5.54
 variables = ["temperature_1_5m", "relative_humidity_1_5m","total_cloud_amount","wind_u_10m","wind_v_10m","diffuse_surface_SW_flux","direct_surface_SW_flux", "downward_surface_SW_flux", "pressure_MSL"]
+total_df = pd.DataFrame()
+
 
 # Define the local directory name to put data in
 ddir="C:/Users/Robbe/PycharmProjects/SolNet 2/Data"
@@ -34,20 +37,41 @@ for year in range(2016,2020):
 
         # loop through days
         for day in range(1, ndays+1):
-
+            day_df = pd.DataFrame()
                 # loop through variables
             for var in variables:
+                #Correct the numbers <10 to have format like 05 ipv 5:
+                if day < 10:
+                    day = "0" + str(day)
+                if month < 10:
+                    month = "0" + str(month)
                 f.cwd(f"/badc/ukmo-nwp/data/euro4-grib/{year}/{month}/{day}")
                 # define filename
-                file=f"{year}{month}{day}00_WSEuro4_MS20_ICAO_height_001054.grib"
+                file=f"{year}{month}{day}00_WSEuro4_{var}_001054.grib"
                 # get the remote file to the local directory
                 f.retrbinary("RETR %s" % file, open(file, "wb").write)
-                ds = xr.load_dataset(file, engine='cfgrib')
-                df = ds.get("unknown")
+                df = xr.load_dataset(file, engine='cfgrib')
+                df.load()
                 df = df.sel(latitude=latitude,longitude= longitude, method="nearest").to_dataframe()
                 os.remove(file)
                 os.remove(f'{file}.923a8.idx') # Some sort of database file that Windows automatically generates
-                print(df)
-                print(df.info())
-                print(f'-----{time.time()-start_time} seconds----')
+
+                #make dataframe
+                df.set_index("valid_time", inplace=True)
+                end_day = int(day)+1
+                pred_time = f"{year}-{month}-{day}"
+                df = df[pred_time:pred_time]
+                df = df.iloc[:,-1] #last column is actual variable, others are mjeh
+                df.name = var
+                day_df = day_df.join(df, how="right")
+                print(day_df)
+                print(f'-----{time.time()-start_timing} seconds----')
+
+                # Make month and day integers again
+                day = int(day)
+                month = int(month)
+            
+            #Merge day to total dataframe
+            total_df = pd.concat([total_df, day_df])
+            print(total_df)
 f.close()
