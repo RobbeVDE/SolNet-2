@@ -1,7 +1,7 @@
 import torch
 
 
-def remove_nighttime(data):
+def remove_nighttime(data, target):
     """
     Remove the nighttime hours from a dataset (hours with 0 output throughout the dataset)
     :param data: the dataset from which to remove the nighttime values
@@ -12,7 +12,7 @@ def remove_nighttime(data):
     for i in range(len(data) - 1):
         dataset_sum = dataset_sum.add(data[i + 1])
 
-    hourly_output = dataset_sum['P'].groupby(dataset_sum.index.hour).sum()
+    hourly_output = dataset_sum[target].groupby(dataset_sum.index.hour).sum()
     hours_with_zero_output = hourly_output.loc[hourly_output == 0].index.tolist()
     hours_with_non_zero_output = hourly_output.loc[hourly_output != 0].index.tolist()
 

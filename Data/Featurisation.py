@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import pandas
 
 
 def _load_data(file_path):
@@ -59,4 +60,11 @@ class Featurisation:
                 self.data[i]['month_sin'] = np.sin(2 * np.pi * self.data[i].index.month / 12)
                 self.data[i]['month_cos'] = np.cos(2 * np.pi * self.data[i].index.month / 12)
 
+        return self.data
+    
+    def add_shift(self, feature, period=24, fill_value=0.13):
+        # shift of solar power to get these lags, we use 0.13 as fill value bcs we will first normalise these values and this is sort of cf
+        for i in range(len(self.data)):        
+            self.data[i][f'{feature}_24h_shift'] = self.data[i][feature].shift(periods=period,fill_value=fill_value)  # Use yearmy average as fill value
+            
         return self.data
