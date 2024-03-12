@@ -131,7 +131,7 @@ class DataFetcher:
         pv_dataset_list = []
 
         for i in range(len(data)):
-            data[i].index = data[i].index.tz_localize(None).floor('H')
+            data[i].index = data[i].index.tz_localize(None).floor('h')
             pv_dataset_list.append(data[i])
 
         return pv_dataset_list

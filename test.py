@@ -1,11 +1,4 @@
-import xarray as xr
-ds = xr.load_dataset("Data/testCEDA.grib", engine='cfgrib')
-for v in ds:
-    key = str(v)
-print(ds)
-df = ds
-latitude = 51.0
-longitude = 5.54
-df = df.sel(latitude=latitude,longitude= longitude, method="nearest").to_dataframe()
+import pandas as pd
+
+df = pd.read_pickle("Data/CEDA_data5.pickle")
 print(df)
-print(df.info())
