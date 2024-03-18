@@ -2,10 +2,10 @@ import pandas as pd
 import numpy as np
 import scipy.stats as stat
 
-from ..util import formulas as fm
+from util import formulas as fm
 
 from matplotlib import pyplot as plt
-import seaborn as sns
+#import seaborn as sns
 
 import warnings
 

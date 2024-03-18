@@ -2,6 +2,7 @@ import pickle
 import pandas as pd
 from tensors.Tensorisation import Tensorisation
 import torch
+from evaluation.evaluation import Evaluation
 from Models.training import Training
 from Models.lstm import LSTM
 from pvlib.pvsystem import PVSystem, FixedMount
@@ -51,9 +52,14 @@ def trainer(dataset, features,  model=None, learning_rate=0.001, criterion=torch
     state_dict_list, best_epoch = training.fit()
 
     return state_dict_list, best_epoch
+def tester(dataset, features, model): #Here plotting possibility??
+    #In evaluation data the power should be removed and can then be compared
+    tensor = Tensorisation(dataset, 'P', features, lags, forecast_period)
+    X, y_truth = tensor.evaluation_tensor_creation()
+    y_forecast = model(X)
+    return y_truth, y_forecast
 
-
-def forecast_maker(source_data, target_data, tuning_method, features): #test_data, hyper_tuning, transposition,
+def forecast_maker(source_data, target_data, tuning_method, features, eval_data): #, hyper_tuning, transposition,
     input_size = len(features)-1
     learning_rate=0.001
     #### SOURCE MODEL ########
@@ -79,8 +85,16 @@ def forecast_maker(source_data, target_data, tuning_method, features): #test_dat
     target_state_dict = target_state_list[target_epoch]
 
     ##### TEST MODEL ######
-    test_model = LSTM(input_size,hidden_size,num_layers, forecast_period, dropout).to(device)
-    test_model.load_state_dict(target_state_dict)
+    eval_model = LSTM(input_size,hidden_size,num_layers, forecast_period, dropout).to(device)
+    eval_model.load_state_dict(target_state_dict)
+    y_truth, y_forecast = tester(eval_data, features, eval_model)
+    
+    y_truth = y_truth.cpu().detach().flatten().numpy()
+    y_forecast = y_forecast.cpu().detach().flatten().numpy()
+
+    eval_obj = Evaluation(y_truth, y_forecast)
+
+    print(eval_obj.metrics())
 
     
     return source_state_dict, target_state_dict
@@ -125,4 +139,15 @@ def CS_power(dataset, latitude, longitude, peak_power):
     dataset["CS_residual"] = (test["p_mp"]-test["P"])/peak_power
 
     return dataset, csi_power
+
+def eval_plotter(truth, forecast, start="2021-08-01", end="2022-08-03"):
+  
+    date_range = pd.date_range(start, end, freq='h')
+    plt.figure()
+    y1 = truth[start:end]
+    y2 = forecast[start:end]
+    plt.plot(date_range, y1, label='Truth')
+    plt.plot(date_range, y2, label='Forecast')
+    plt.xlabel("Date")
+    plt.ylabel("Photovoltaic Power [kWh]")
 

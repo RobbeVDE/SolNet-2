@@ -68,3 +68,14 @@ class Featurisation:
             self.data[i][f'{feature}_24h_shift'] = self.data[i][feature].shift(periods=period,fill_value=fill_value)  # Use yearmy average as fill value
             
         return self.data
+    
+    def cyclic_angle(self, feature):
+        """
+        Take the cosine and sine of an angle to better represent cyclic behaviour
+        """
+        for i in range(len(self.data)):
+            radians = np.deg2rad(self.data[i][feature])
+            self.data[i][f'{feature}_cos'] = np.cos(radians)
+            self.data[i][f'{feature}_sin'] = np.sin(radians)
+        return self.data
+
