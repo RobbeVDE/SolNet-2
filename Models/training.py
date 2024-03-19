@@ -101,10 +101,10 @@ class Training:
 
             state_dict_list.append(self.model.state_dict())
 
-            # if epoch % 5 == 0:
-            #     print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch,
-            #                                                                                    avg_train_error[epoch],
-            #                                                                                    avg_test_error[epoch]))
+            if epoch % 5 == 0:
+                print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch,
+                                                                                               avg_train_error[epoch],
+                                                                                               avg_test_error[epoch]))
 
         argmin_test = avg_test_error.index(min(avg_test_error))
 

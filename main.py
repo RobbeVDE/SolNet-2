@@ -19,7 +19,7 @@ from pvlib.iotools import read_tmy3
 lags = 24
 forecast_period=24
 hidden_size = 100
-num_layers = 4
+num_layers = 5
 dropout = 0.3
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -37,13 +37,14 @@ def trainer(dataset, features,  model=None, learning_rate=0.001, criterion=torch
     
     if model==None:
         my_lstm = LSTM(input_size,hidden_size,num_layers, forecast_period, dropout).to(device)
-    else:
+        epochs = 80
+    else:  #Avoid overfitting by reducing the amount it iterates
         my_lstm=model
+        epochs = 80
     
     print(my_lstm)
 
-    # Set the training parameters
-    epochs = 80
+    
 
     # Initialize the trainer
     training = Training(my_lstm, X_train, y_train, X_test, y_test, epochs, learning_rate=learning_rate, criterion=criterion)
@@ -56,7 +57,9 @@ def tester(dataset, features, model): #Here plotting possibility??
     #In evaluation data the power should be removed and can then be compared
     tensor = Tensorisation(dataset, 'P', features, lags, forecast_period)
     X, y_truth = tensor.evaluation_tensor_creation()
-    y_forecast = model(X)
+    model.eval()
+    with torch.no_grad():
+        y_forecast = model(X)
     return y_truth, y_forecast
 
 def forecast_maker(source_data, target_data, tuning_method, features, eval_data): #, hyper_tuning, transposition,
@@ -78,7 +81,7 @@ def forecast_maker(source_data, target_data, tuning_method, features, eval_data)
         learning_rate = learning_rate/100
     elif tuning_method == "whole":
         #Change all parameters but with really low learning rated
-        learning_rate = learning_rate/1000
+        learning_rate = learning_rate/10e4
     else:
         raise KeyError
     target_state_list, target_epoch = trainer(target_data, features, model=transfer_model)
@@ -97,7 +100,8 @@ def forecast_maker(source_data, target_data, tuning_method, features, eval_data)
     print(eval_obj.metrics())
 
     
-    return source_state_dict, target_state_dict
+    return source_state_dict, target_state_dict, y_truth, y_forecast
+
 def target_renamer(dataset, original_name):
     #Rename column with target to 'P' to simplify rest of code
     dataset = dataset.rename(columns ={original_name:'P'})
@@ -151,3 +155,10 @@ def eval_plotter(truth, forecast, start="2021-08-01", end="2022-08-03"):
     plt.xlabel("Date")
     plt.ylabel("Photovoltaic Power [kWh]")
 
+def data_slicer(data, date_range):
+    """
+    Take a slice of the data which belongs to the desired date_range
+    """
+    data = data[data.index.isin(date_range)]
+
+    return data

@@ -11,7 +11,7 @@ total_df = pd.DataFrame()
 
 
 # Define the local directory name to put data in
-ddir="C:/Users/Robbe/PycharmProjects/SolNet 2/Data"
+ddir="C:/Users/Robbe/PycharmProjects/SolNet 2/CEDA"
 
 # If directory doesn't exist make it
 if not os.path.isdir(ddir):
@@ -22,9 +22,9 @@ os.chdir(ddir)
 
 f=FTP("ftp.ceda.ac.uk", "vrobbe", "3<[@$|RJLKF-")
 # loop through years
-for year in range(2017,2020):
-    if year == 2017: #Only some months present
-        month_range = range(10,13)
+for year in range(2016,2017):
+    if year == 2016: #Only some months present
+        month_range = range(7,8)
     else:
         month_range = range(1,13)
     # loop through months
@@ -35,10 +35,10 @@ for year in range(2017,2020):
             ndays=29
         else:
             ndays=int("dummy 31 28 31 30 31 30 31 31 30 31 30 31".split()[month])
-        if (year==2017) and (month==10):
-            start_day = 27
+        if (year==2016) and (month==7):
+            start_day = 14
         # loop through days
-        for day in range(start_day, ndays+1):
+        for day in range(14, 15):
             day_df = pd.DataFrame()
                 # loop through variables
             for var in variables:
@@ -63,9 +63,11 @@ for year in range(2017,2020):
                 end_day = int(day)+1
                 pred_time = f"{year}-{month}-{day}"
                 df = df[pred_time:pred_time]
+                print(df)
                 df = df.iloc[:,-1] #last column is actual variable, others are mjeh
                 df.name = var
                 day_df = day_df.join(df, how="right")
+                print(day_df)
                 print(f'-----{time.time()-start_timing} seconds----')
 
                 # Make month and day integers again
@@ -74,7 +76,7 @@ for year in range(2017,2020):
             
             #Merge day to total dataframe
             total_df = pd.concat([total_df, day_df])
-            total_df.to_pickle("CEDA_data6.pickle")
+            total_df.to_pickle("CEDA_data_NL2.pickle")
     total_df.to_pickle(f"CEDA_backup_{year}")
         
 f.close()

@@ -1,4 +1,4 @@
 import pandas as pd
 
-df = pd.read_pickle("Data/CEDA_data6.pickle")
+df = pd.read_pickle("CEDA/CEDA_data_NL2.pickle")
 print(df)
