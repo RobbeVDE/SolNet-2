@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -25,7 +25,8 @@ class Training:
             epochs,
             batch_size=32,
             learning_rate=0.001,
-            criterion=torch.nn.MSELoss()):
+            criterion=torch.nn.MSELoss()
+            ):
         """
         The training class for the pytorch model
         :param model: The model that we train
@@ -74,7 +75,6 @@ class Training:
                 prediction = self.model(input)
                 output = output.squeeze()
                 loss = self.criterion(prediction, output)
-
                 total_loss += float(loss)
                 num_train_batches += 1
 

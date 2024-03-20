@@ -6,7 +6,8 @@ class LSTM(nn.Module):
             self,
             input_size,
             hidden_size,
-            num_layers,
+            num_layers_source,
+            num_layers_target,
             output_size,
             dropout):
         """
@@ -21,11 +22,13 @@ class LSTM(nn.Module):
 
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.num_layers = num_layers
+        self.num_layers_source = num_layers_source
+        self.num_layers_target = num_layers_target
         self.output_size = output_size
         self.dropout = dropout
 
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, dropout=dropout, batch_first=True)
+        self.source_lstm = nn.LSTM(input_size, hidden_size, num_layers_source, dropout=dropout, batch_first=True)
+        self.target_lstm = nn.LSTM(hidden_size, hidden_size, num_layers_target, batch_first=True)
         self.linear = nn.Linear(in_features=hidden_size, out_features=output_size)
 
     def forward(self, input):
@@ -34,11 +37,11 @@ class LSTM(nn.Module):
         :param input: the input tensor
         :return: output tensor
         """
-        hidden, _ = self.lstm(input, None)
+        hidden, _ = self.source_lstm(input, None)
+        hidden, _ = self.target_lstm(hidden, None)
         if hidden.dim() == 2:
             hidden = hidden[-1, :]
         else:
             hidden = hidden[:, -1, :]
         output = self.linear(hidden)
-
         return output

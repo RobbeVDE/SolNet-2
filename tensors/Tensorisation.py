@@ -107,8 +107,8 @@ class Tensorisation:
             # Use the scaling method to get everything between 0 and 1     
             train, test = _scale(X_train_feature,
                                 X_test_feature,
-                                domain_min=self.domain_min[i] if isinstance(self.domain_max, list) else None,
-                                domain_max=self.domain_max[i] if isinstance(self.domain_max, list) else None)
+                                domain_min=self.domain_min[feature] if isinstance(self.domain_max, list) else None,
+                                domain_max=self.domain_max[feature] if isinstance(self.domain_max, list) else None)
 
             # Use the moving window to go from the flat tensor to the correct dimensions (window, lags per window)
             X_train[:, :, i] = _moving_window(train,
