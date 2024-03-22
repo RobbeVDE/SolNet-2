@@ -15,12 +15,12 @@ import matplotlib.pyplot as plt
 from pvlib.location import Location
 
 from pvlib.iotools import read_tmy3
-epochs = 80
+epochs = 100
 lags = 24
 forecast_period=24
-hidden_size = 100
+hidden_size = 400
 num_layers_source = 5
-num_layers_target = 1
+num_layers_target = 2
 dropout = 0.3
 learning_rate=0.001
 
@@ -69,8 +69,8 @@ def forecast_maker(source_data, target_data, features, eval_data, scale=None): #
     transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout).to(device)
     transfer_model.load_state_dict(source_state_dict)
 
-    for param in transfer_model.source_lstm.parameters():
-        param.requires_grad = False
+    # for param in transfer_model.source_lstm.parameters():
+    #     param.requires_grad = False
     
     
     
@@ -110,7 +110,7 @@ def CS_power(dataset, latitude, longitude, peak_power):
     cs = location.get_clearsky(times)
     temperature_model_parameters = TEMPERATURE_MODEL_PARAMETERS['sapm']['open_rack_glass_glass']
 
-    # load some module and inverter specifications
+    # load some module and inverter specifications (this is random for now)
     sandia_modules = pvlib.pvsystem.retrieve_sam('SandiaMod')
 
     cec_inverters = pvlib.pvsystem.retrieve_sam('cecinverter')
