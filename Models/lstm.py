@@ -5,14 +5,15 @@ class LSTM(nn.Module):
     def __init__(
             self,
             input_size,
-            hidden_size,
             num_layers_source,
             num_layers_target,
+            n_nodes_source,
+            n_nodes_target,
             output_size,
             dropout,
             day_index = None):
         """
-        Simple LSTM model made in pytorch
+        Simple LSTM model made in pytorch   STM(input_size, optimizer_name, lr_target, n_layers_source, n_layers_target, n_nodes_source, n_nodes_target, forecast_period, dropout)
         :param input_size: the size of the input (based on the lags provided)
         :param hidden_size: the hidden layer sizes
         :param num_layers: the number of layers in the LSTM (each of size hidden_size)
@@ -22,16 +23,17 @@ class LSTM(nn.Module):
         super().__init__()
 
         self.input_size = input_size
-        self.hidden_size = hidden_size
+        self.hidden_size_source = n_nodes_source
+        self.hidden_size_target = n_nodes_target
         self.num_layers_source = num_layers_source
         self.num_layers_target = num_layers_target
         self.output_size = output_size
         self.dropout = dropout
         self.day_index = day_index
 
-        self.source_lstm = nn.LSTM(input_size, hidden_size, num_layers_source, dropout=dropout, batch_first=True)
-        self.target_lstm = nn.LSTM(hidden_size, hidden_size, num_layers_target, batch_first=True)
-        self.linear = nn.Linear(in_features=hidden_size, out_features=output_size)
+        self.source_lstm = nn.LSTM(input_size, n_nodes_source, num_layers_source, dropout=dropout, batch_first=True)
+        self.target_lstm = nn.LSTM(n_nodes_source, n_nodes_target, num_layers_target, batch_first=True)
+        self.linear = nn.Linear(in_features=n_nodes_target, out_features=output_size)
 
     def forward(self, input):
         """

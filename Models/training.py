@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 cross_validate = False
 ES_option = False # Option to use early stopping
+import optuna
+import torch.optim as optim
+
+
 def save_model(model, name):
     """
     Saves the state dictionary using torch
@@ -24,6 +28,8 @@ class Training:
             X_test,
             y_test,
             epochs,
+            optimizer_name,
+            trial,
             batch_size=32,
             learning_rate=0.001,
             criterion=torch.nn.MSELoss()
@@ -55,9 +61,10 @@ class Training:
             self.train_loader = DataLoader(train_data, batch_size=batch_size)
             self.test_loader = DataLoader(test_data, batch_size=batch_size)
 
+        self.trial = trial
         self.model = model
         self.criterion = criterion
-        self.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        self.optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=learning_rate)
         self.epochs = epochs
         
 
@@ -115,7 +122,9 @@ class Training:
 
                     avg_train_error.append(total_loss / num_train_batches)
                     avg_test_error.append(total_loss_test / num_test_batches)
-
+                    self.trial.report(avg_test_error[-1], epoch)
+                    if self.trial.should_prune():
+                        raise optuna.exceptions.TrialPruned()
                     state_dict_list.append(self.model.state_dict())
 
                     if epoch % 5 == 0:
@@ -147,7 +156,6 @@ class Training:
                 self.model.eval()
 
                 with torch.inference_mode():
-
                     test_batches = iter(self.test_loader)
 
                     for input, output in test_batches:
@@ -162,6 +170,9 @@ class Training:
                 avg_test_error.append(total_loss_test / num_test_batches)
                 if early_stopper.early_stop(avg_test_error[-1]) and ES_option:
                     break
+                self.trial.report(avg_test_error[-1], epoch)
+                if self.trial.should_prune():
+                    raise optuna.exceptions.TrialPruned()
                 state_dict_list.append(self.model.state_dict())
 
                 if epoch % 5 == 0:
