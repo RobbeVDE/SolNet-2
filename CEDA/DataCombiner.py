@@ -9,7 +9,6 @@ total_df.index = pd.to_datetime(total_df.index, utc=True)
 total_df["wind_speed_10m"] = total_df["wind_u_10m"] **2+ total_df["wind_v_10m"] **2
 total_df["wind_direction_10m"] = np.arctan2(total_df["wind_v_10m"], total_df["wind_u_10m"]) *180/np.pi + 180 #Convert from [-pi, pi] to [0,360]
 total_df.drop(columns=['wind_u_10m', 'wind_v_10m'], inplace=True)
-print(total_df.info())
 
 #2016-07-14 has empty columns but didn't give an error so fill up with NaN values here, keep it general if more days missing
 missing_days = [pd.to_datetime("2016-07-14", utc=True)]
@@ -19,28 +18,30 @@ for day in missing_days:
     total_df = pd.concat([total_df, lol])
 
 total_df.sort_index(inplace=True)
+
+print(total_df["2017-02-01":"2017-02-28"])
 #Check if there are no dates missing now anymore
 day_range = pd.date_range("2016-05-01", "2021-12-31", freq='D')
 total_df['date'] = total_df.index.date
 lol = day_range[~day_range.isin(total_df['date'])]
-print(lol.tolist())
-
+# print(lol)
 #Check for duplicates
-print(total_df.index.duplicated(keep='first').sum())
+# print(total_df.index.duplicated(keep='first').sum())
 
 
 #Reindex such that we have a value for 00:00, not that important bcs power=0
 range = pd.date_range(total_df.index.min()-pd.Timedelta('1h'), total_df.index.max(), freq='h', tz="UTC")
 total_df = total_df.reindex(index=range, method='nearest', limit=1)
-print(total_df.info())
+# print(total_df.info())
 
 #Finally, remove days with NaN, reason we added NaN is such that reindex not includes the whole day
 mask = total_df.isna().any(axis=1) #Don't have to group on day bcs files were for day so if 1 hour is missing, all hours from that day are missing
 
 total_df = total_df[~mask]
 total_df.drop('date', inplace=True, axis=1)
-print(total_df.info())
-print(total_df)
+print(total_df["2017-02-01":"2017-02-28"])
+# print(total_df.info())
+# print(total_df)
 
 
 
