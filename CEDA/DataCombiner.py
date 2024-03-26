@@ -6,8 +6,8 @@ for i in range(1,7):
     df = pd.read_pickle(file)
     total_df = pd.concat([total_df, df])
 total_df.index = pd.to_datetime(total_df.index, utc=True)
-total_df["wind_speed_10m"] = total_df["wind_u_10m"] **2+ total_df["wind_v_10m"] **2
-total_df["wind_direction_10m"] = np.arctan2(total_df["wind_v_10m"], total_df["wind_u_10m"]) *180/np.pi + 180 #Convert from [-pi, pi] to [0,360]
+total_df["wind_speed_10m"] = np.sqrt(total_df["wind_u_10m"] **2+ total_df["wind_v_10m"] **2)
+total_df["wind_direction_10m"] = np.arctan2(total_df["wind_v_10m"], total_df["wind_u_10m"]) *180/np.pi  #Convert from [-pi, pi] to [0,360]
 total_df.drop(columns=['wind_u_10m', 'wind_v_10m'], inplace=True)
 
 #2016-07-14 has empty columns but didn't give an error so fill up with NaN values here, keep it general if more days missing

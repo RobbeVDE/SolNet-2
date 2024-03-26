@@ -1,8 +1,9 @@
 import torch
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset, ConcatDataset
 import numpy as np
 import matplotlib.pyplot as plt
-
+from sklearn.model_selection import KFold
+cross_validate = True
 
 def save_model(model, name):
     """
@@ -43,16 +44,22 @@ class Training:
 
         train_data = TensorDataset(X_train.to(self.device), y_train.to(self.device))
         test_data = TensorDataset(X_test.to(self.device), y_test.to(self.device))
-        self.train_loader = DataLoader(train_data, batch_size=batch_size)
-        self.test_loader = DataLoader(test_data, batch_size=batch_size)
+
+        days = y_train.shape[0] + y_test.shape[0]
+        self.months = round(days / 30.5)
+        if cross_validate:
+            self.total_data = ConcatDataset([train_data, test_data])
+            self.kfold = KFold()
+            self.batch_size = batch_size
+        else:
+            self.train_loader = DataLoader(train_data, batch_size=batch_size)
+            self.test_loader = DataLoader(test_data, batch_size=batch_size)
 
         self.model = model
         self.criterion = criterion
         self.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         self.epochs = epochs
-
-        days = y_train.shape[0] + y_test.shape[0]
-        self.months = round(days / 30.5)
+        
 
     def fit(self):
         """
@@ -62,49 +69,103 @@ class Training:
         avg_train_error = []
         avg_test_error = []
         state_dict_list = []
+        if cross_validate:
+            for fold, (train_ids, test_ids) in enumerate(self.kfold.split(self.total_data)):
+                print(f'FOLD {fold}')
+                print('-----------------------')
 
-        for epoch in range(self.epochs):
-            num_train_batches = 0
-            num_test_batches = 0
-            total_loss = 0
-            total_loss_test = 0
-            batches = iter(self.train_loader)
-            self.model.train()
+                train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
+                test_subsampler = torch.utils.data.SubsetRandomSampler(test_ids)
+                trainloader = torch.utils.data.DataLoader(self.total_data, 
+                                                          batch_size=self.batch_size, sampler=train_subsampler)
+                testloader = torch.utils.data.DataLoader(self.total_data, 
+                                                         batch_size=self.batch_size, sampler=test_subsampler)
+                for epoch in range(self.epochs):
+                    num_train_batches = 0
+                    num_test_batches = 0
+                    total_loss = 0
+                    total_loss_test = 0
+                    batches = iter(trainloader)
+                    self.model.train()
 
-            for input, output in batches:
-                prediction = self.model(input)
-                output = output.squeeze()
-                loss = self.criterion(prediction, output)
-                total_loss += float(loss)
-                num_train_batches += 1
+                    for input, output in batches:
+                        prediction = self.model(input)
+                        output = output.squeeze()
+                        loss = self.criterion(prediction, output)
+                        total_loss += float(loss)
+                        num_train_batches += 1
 
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
+                        self.optimizer.zero_grad()
+                        loss.backward()
+                        self.optimizer.step()
 
-            self.model.eval()
+                    self.model.eval()
 
-            with torch.inference_mode():
+                    with torch.inference_mode():
 
-                test_batches = iter(self.test_loader)
+                        test_batches = iter(testloader)
 
-                for input, output in test_batches:
+                        for input, output in test_batches:
+                            prediction = self.model(input)
+                            output = output.squeeze()
+                            test_loss = self.criterion(prediction, output)
+
+                            total_loss_test += float(test_loss)
+                            num_test_batches += 1
+
+                    avg_train_error.append(total_loss / num_train_batches)
+                    avg_test_error.append(total_loss_test / num_test_batches)
+
+                    state_dict_list.append(self.model.state_dict())
+
+                    if epoch % 5 == 0:
+                        print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch,
+                                                                                                    avg_train_error[fold*100+epoch],
+                                                                                                    avg_test_error[fold*100+epoch]))
+
+        else:
+            for epoch in range(self.epochs):
+                num_train_batches = 0
+                num_test_batches = 0
+                total_loss = 0
+                total_loss_test = 0
+                batches = iter(self.train_loader)
+                self.model.train()
+
+                for input, output in batches:
                     prediction = self.model(input)
                     output = output.squeeze()
-                    test_loss = self.criterion(prediction, output)
+                    loss = self.criterion(prediction, output)
+                    total_loss += float(loss)
+                    num_train_batches += 1
 
-                    total_loss_test += float(test_loss)
-                    num_test_batches += 1
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
 
-            avg_train_error.append(total_loss / num_train_batches)
-            avg_test_error.append(total_loss_test / num_test_batches)
+                self.model.eval()
 
-            state_dict_list.append(self.model.state_dict())
+                with torch.inference_mode():
 
-            if epoch % 5 == 0:
-                print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch,
-                                                                                               avg_train_error[epoch],
-                                                                                               avg_test_error[epoch]))
+                    test_batches = iter(self.test_loader)
+
+                    for input, output in test_batches:
+                        prediction = self.model(input)
+                        output = output.squeeze()
+                        test_loss = self.criterion(prediction, output)
+
+                        total_loss_test += float(test_loss)
+                        num_test_batches += 1
+
+                avg_train_error.append(total_loss / num_train_batches)
+                avg_test_error.append(total_loss_test / num_test_batches)
+
+                state_dict_list.append(self.model.state_dict())
+
+                if epoch % 5 == 0:
+                    print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch,
+                                                                                                avg_train_error[epoch],
+                                                                                                avg_test_error[epoch]))
 
         argmin_test = avg_test_error.index(min(avg_test_error))
 
@@ -115,3 +176,10 @@ class Training:
         plt.legend()
 
         return state_dict_list, argmin_test
+
+
+class EarlyStopper:
+    def __init__(self, patience, min_delta=0):
+        self.patience = patience
+        self.min_delta = min_delta
+        
