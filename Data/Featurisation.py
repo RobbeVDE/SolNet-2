@@ -104,13 +104,28 @@ class Featurisation:
 
         return self.data
     
-    def remove_outliers(self, GHI_name = 'downward_surface_SW_flux', tolerance = 10): 
+    def remove_outliers(self, GHI_name = 'downward_surface_SW_flux', tolerance = 0): 
         """"
         Remove data entries where the power of PV is 0 but GHI is higher than a specified tolerance
         """
         for i in range(len(self.data)):
-
-            mask = (self.data[i]['P'] == 0) * (self.data[i][GHI_name] > 0)
-            self.data[i] = self.data[i][~mask]
+            dataset = self.data[i]
+            mask = (dataset['P'] == 0) * (dataset[GHI_name] > tolerance)
+            indices = dataset[mask].index
+            dates = list(indices.date)
+            dataset['date'] = dataset.index.date
+            dataset = dataset[~dataset.date.isin(dates)]
+            self.data[i] = dataset.drop('date', axis=1)
 
         return self.data
+    
+    def inverter_limit(self, inverter_rating):
+        """
+        Add inverter rating which is not possible for PVGIS
+        """
+        for i in range(len(self.data)):
+            dataset = self.data[i]['P']
+            dataset[dataset>inverter_rating] = inverter_rating
+            self.data[i]['P'] = dataset
+        return self.data
+

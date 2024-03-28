@@ -22,11 +22,12 @@ hidden_size = 400
 num_layers_source = 5
 num_layers_target = 2
 dropout = 0.3
-learning_rate=0.001
+lr_source=0.001
+lr_target = 1e-5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def trainer(dataset, features,  model=None,scale=None, learning_rate=0.001, criterion=torch.nn.MSELoss()):
+def trainer(dataset, features,  model=None,scale=None, lr=0.001, criterion=torch.nn.MSELoss()):
     input_size = len(features)-1
 
     ## Make sure that dataset is just a dataframe and not a list of dataframes
@@ -61,7 +62,7 @@ def forecast_maker(source_data, target_data, features, eval_data, scale=None): #
     #Freeze the layers which are reserved for the target training
     
     
-    source_state_list, source_epoch = trainer(source_data, features,model=source_model, scale=scale)
+    source_state_list, source_epoch = trainer(source_data, features,model=source_model, scale=scale, lr=lr_source)
 
     source_state_dict = source_state_list[source_epoch]
     
@@ -75,7 +76,7 @@ def forecast_maker(source_data, target_data, features, eval_data, scale=None): #
     
     
 
-    target_state_list, target_epoch = trainer(target_data, features, scale=scale, model=transfer_model)
+    target_state_list, target_epoch = trainer(target_data, features, scale=scale, model=transfer_model, lr=lr_target)
     target_state_dict = target_state_list[target_epoch]
 
     ##### TEST MODEL ######
