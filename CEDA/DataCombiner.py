@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from pvlib import location
 total_df = pd.DataFrame()
 for i in range(1,7):
     file = f"CEDA/CEDA_data_NL{i}.pickle"
@@ -19,7 +20,7 @@ for day in missing_days:
 
 total_df.sort_index(inplace=True)
 
-print(total_df["2017-02-01":"2017-02-28"])
+# print(total_df["2017-02-01":"2017-02-28"])
 #Check if there are no dates missing now anymore
 day_range = pd.date_range("2016-05-01", "2021-12-31", freq='D')
 total_df['date'] = total_df.index.date
@@ -39,10 +40,23 @@ mask = total_df.isna().any(axis=1) #Don't have to group on day bcs files were fo
 
 total_df = total_df[~mask]
 total_df.drop('date', inplace=True, axis=1)
-print(total_df["2017-02-01":"2017-02-28"])
+# print(total_df["2017-02-01":"2017-02-28"])
 # print(total_df.info())
 # print(total_df)
 
 
+# Direct irradiance is given in plane instead of normal we can however recalculate this with DNI = DirIrrad/cos(zenith)
 
+latitude,longitude = 52.0499, 5.07391
+site = location.Location(latitude, longitude, tz='UTC')
+times = total_df.index
+solar_pos = site.get_solarposition(times)
+zenith = np.deg2rad(solar_pos['apparent_zenith'])
+
+dir_surf_irrad = total_df["direct_surface_SW_flux"]
+
+
+
+
+total_df["direct_surface_SW_flux"] = dir_surf_irrad.div(np.cos(zenith, dtype='float64'), axis=0, fill_value=0)
 total_df.to_pickle("CEDA_dataNL.pickle")

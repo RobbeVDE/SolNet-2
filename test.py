@@ -1,15 +1,18 @@
-import torch
-from Models.lstm import LSTM
-lags = 24
-forecast_period=24
-hidden_size = 100
-num_layers_source = 5
-num_layers_target = 1
-dropout = 0.3
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-input_size = 13
-my_lstm = LSTM(input_size,hidden_size,num_layers_source,num_layers_target, forecast_period, dropout).to(device)
-for param in my_lstm.source_lstm.parameters():
-    param.requires_grad = False
-print(my_lstm)
+from pvlib import location
+import pandas as pd
+import numpy as np
+total_df = pd.read_pickle("CEDA_dataNL.pickle")
 
+latitude,longitude = 52.0499, 5.07391
+site = location.Location(latitude, longitude, tz='UTC')
+times = total_df.index
+solar_pos = site.get_solarposition(times)
+zenith = np.deg2rad(solar_pos['apparent_zenith'])
+
+dir_surf_irrad = total_df["direct_surface_SW_flux"]
+print(dir_surf_irrad)
+print(dir_surf_irrad.div(np.cos(zenith, dtype='float64'), axis=1, fill_value=0))
+
+
+
+total_df["direct_surface_SW_flux"] = dir_surf_irrad.div(np.cos(zenith, dtype='float64'), axis=0, fill_value=0)

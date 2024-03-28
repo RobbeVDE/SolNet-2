@@ -1,7 +1,8 @@
 import numpy as np
 import pickle
 import pandas
-
+from pvlib import location
+from pvlib import irradiance
 
 def _load_data(file_path):
     """
@@ -78,4 +79,38 @@ class Featurisation:
             self.data[i][f'{feature}_cos'] = np.cos(radians)
             self.data[i][f'{feature}_sin'] = np.sin(radians)
         return self.data
+    
 
+    def PoA(self, latitude, longitude, tilt, azimuth,
+            GHI_name = "downward_surface_SW_flux",
+            DNI_name = "direct_surface_SW_flux",
+            DHI_name = "diffuse_surface_SW_flux"):
+        
+        azimuth = azimuth+180 #PVGIS works in [-180,180] and pvlib in [0,360]
+
+        site = location.Location(latitude, longitude,  tz='UTC')
+        for i in range(len(self.data)):
+
+            times = self.data[i].index
+            solar_position = site.get_solarposition(times=times)
+            ghi = self.data[i][GHI_name]
+            dhi = self.data[i][DHI_name]
+            dni = self.data[i][DNI_name]
+            dni_extra = irradiance.get_extra_radiation(times)
+            POA_irrad = irradiance.get_total_irradiance(surface_tilt=tilt, surface_azimuth=azimuth, 
+                                                        dni=dni, ghi=ghi, dhi=dhi, solar_zenith=solar_position['apparent_zenith'],
+                                                        dni_extra=dni_extra, model='perez',solar_azimuth=solar_position['azimuth'])
+            self.data[i]['PoA'] = POA_irrad['poa_global'].fillna(0)
+
+        return self.data
+    
+    def remove_outliers(self, GHI_name = 'downward_surface_SW_flux', tolerance = 10): 
+        """"
+        Remove data entries where the power of PV is 0 but GHI is higher than a specified tolerance
+        """
+        for i in range(len(self.data)):
+
+            mask = (self.data[i]['P'] == 0) * (self.data[i][GHI_name] > 0)
+            self.data[i] = self.data[i][~mask]
+
+        return self.data

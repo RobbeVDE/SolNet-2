@@ -3,8 +3,8 @@ from torch.utils.data import DataLoader, TensorDataset, ConcatDataset
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
-cross_validate = True
-
+cross_validate = False
+ES_option = False # Option to use early stopping
 def save_model(model, name):
     """
     Saves the state dictionary using torch
@@ -122,8 +122,9 @@ class Training:
                         print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch,
                                                                                                     avg_train_error[fold*100+epoch],
                                                                                                     avg_test_error[fold*100+epoch]))
-
+                    #### STILL HAVE TO RESET WEIGHTS AFTER FOLD ####
         else:
+            early_stopper = EarlyStopper(patience=5, min_delta=0.005)
             for epoch in range(self.epochs):
                 num_train_batches = 0
                 num_test_batches = 0
@@ -159,7 +160,8 @@ class Training:
 
                 avg_train_error.append(total_loss / num_train_batches)
                 avg_test_error.append(total_loss_test / num_test_batches)
-
+                if early_stopper.early_stop(avg_test_error[-1]) and ES_option:
+                    break
                 state_dict_list.append(self.model.state_dict())
 
                 if epoch % 5 == 0:
@@ -182,4 +184,14 @@ class EarlyStopper:
     def __init__(self, patience, min_delta=0):
         self.patience = patience
         self.min_delta = min_delta
-        
+        self.counter = 0
+        self.min_validation_loss = float('inf')
+    def early_stop(self, validation_loss):
+        if validation_loss < self.min_validation_loss:
+            self.min_validation_loss = validation_loss
+            self.counter = 0
+        elif validation_loss > (self.min_validation_loss + self.min_delta):
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+        return False
