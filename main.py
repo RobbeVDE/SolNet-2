@@ -39,7 +39,7 @@ def trainer(dataset, features,  model=None,scale=None, lr=0.001, criterion=torch
     print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
     # Initialize the trainer
-    training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=learning_rate, criterion=criterion)
+    training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=lr, criterion=criterion)
 
     # Train the model and return the trained parameters and the best iteration
     state_dict_list, best_epoch = training.fit()
