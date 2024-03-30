@@ -55,10 +55,11 @@ def tester(dataset, features, model, scale=None): #Here plotting possibility??
     return y_truth, y_forecast
 
 def forecast_maker(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
-    input_size = len(features)-1
+    
+    input_size = len(features)-2 #No power and no is_day
     #### SOURCE MODEL ########
-
-    source_model = LSTM(input_size,hidden_size,num_layers_source,num_layers_target, forecast_period, dropout).to(device)
+    day_index =  features.index("is_day")-1 #BCS power also feature
+    source_model = LSTM(input_size,hidden_size,num_layers_source,num_layers_target, day_index, forecast_period, dropout).to(device)
     #Freeze the layers which are reserved for the target training
     
     
@@ -67,20 +68,20 @@ def forecast_maker(source_data, target_data, features, eval_data, scale=None): #
     source_state_dict = source_state_list[source_epoch]
     
     #### TRANSFER MODEL #####
-    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout).to(device)
+
+    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, day_index, forecast_period, dropout).to(device)
     transfer_model.load_state_dict(source_state_dict)
 
-    # for param in transfer_model.source_lstm.parameters():
-    #     param.requires_grad = False
+    for param in transfer_model.source_lstm.parameters():
+        param.requires_grad = False
     
     
-    
-
     target_state_list, target_epoch = trainer(target_data, features, scale=scale, model=transfer_model, lr=lr_target)
     target_state_dict = target_state_list[target_epoch]
 
     ##### TEST MODEL ######
-    eval_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout).to(device)
+
+    eval_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, day_index, forecast_period, dropout).to(device)
     eval_model.load_state_dict(target_state_dict)
     y_truth, y_forecast = tester(eval_data, features, eval_model, scale=scale)
     

@@ -104,9 +104,11 @@ class Featurisation:
 
         return self.data
     
-    def remove_outliers(self, GHI_name = 'downward_surface_SW_flux', tolerance = 0): 
+    def remove_outliers(self, GHI_name = 'downward_surface_SW_flux', tolerance = 50): 
         """"
         Remove data entries where the power of PV is 0 but GHI is higher than a specified tolerance
+        Take a 50 default tolerance, bcs there seem to be no power produced at beginning of day when irrad really low
+        but want machine to learn this bcs this is not an outlier
         """
         for i in range(len(self.data)):
             dataset = self.data[i]

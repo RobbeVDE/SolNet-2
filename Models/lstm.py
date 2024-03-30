@@ -1,5 +1,5 @@
 from torch import nn
-
+import torch
 
 class LSTM(nn.Module):
     def __init__(
@@ -8,6 +8,7 @@ class LSTM(nn.Module):
             hidden_size,
             num_layers_source,
             num_layers_target,
+            day_index,
             output_size,
             dropout):
         """
@@ -26,6 +27,7 @@ class LSTM(nn.Module):
         self.num_layers_target = num_layers_target
         self.output_size = output_size
         self.dropout = dropout
+        self.day_index = day_index
 
         self.source_lstm = nn.LSTM(input_size, hidden_size, num_layers_source, dropout=dropout, batch_first=True)
         self.target_lstm = nn.LSTM(hidden_size, hidden_size, num_layers_target, batch_first=True)
@@ -37,11 +39,15 @@ class LSTM(nn.Module):
         :param input: the input tensor
         :return: output tensor
         """
-        hidden, _ = self.source_lstm(input, None)
+        night_mask = input[:,:,self.day_index]
+        night_mask.bool()
+        bla = torch.cat((input[:,:,:self.day_index], input[:,:,self.day_index+1:]), dim=3)
+        hidden, _ = self.source_lstm(bla, None)
         hidden, _ = self.target_lstm(hidden, None)
         if hidden.dim() == 2:
             hidden = hidden[-1, :]
         else:
             hidden = hidden[:, -1, :]
         output = self.linear(hidden)
+        output[night_mask] = 0
         return output
