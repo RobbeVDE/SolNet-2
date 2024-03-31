@@ -40,8 +40,14 @@ class LSTM(nn.Module):
         :return: output tensor
         """
         night_mask = input[:,:,self.day_index]
-        night_mask.bool()
-        bla = torch.cat((input[:,:,:self.day_index], input[:,:,self.day_index+1:]), dim=3)
+        night_mask = night_mask.bool()
+        night_mask = ~night_mask #Now it was True when day
+        if self.day_index == input.size(2): #If is_day is last feature we don't have to concat 2 strings
+            bla = input[:,:,:self.day_index]
+        else:
+            one = input[:,:,:self.day_index]
+            two = input[:,:,self.day_index+1:]
+            bla = torch.cat((one, two), dim=2)
         hidden, _ = self.source_lstm(bla, None)
         hidden, _ = self.target_lstm(hidden, None)
         if hidden.dim() == 2:
