@@ -85,12 +85,6 @@ class Tensorisation:
         train_len = round(windows * self.train_test_split)  # Split the features into a train set...
         test_len = windows - train_len  # ... and a test set
 
-        # Remove target variable from features, ignore if its not in feature list
-        try:
-            self.features.remove(self.target)
-        except:
-            pass
-
         X_train = torch.zeros(train_len, self.lags,
                               len(self.features))  # Create the empty training tensor for the features
         X_test = torch.zeros(test_len, self.lags,

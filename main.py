@@ -28,11 +28,8 @@ lr_target = 1e-5
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def trainer(dataset, features,  model=None,scale=None, lr=0.001, criterion=torch.nn.MSELoss()):
-    input_size = len(features)-1
 
-    ## Make sure that dataset is just a dataframe and not a list of dataframes
-    # Get the list of features
-    input_size = len(features)-1
+
     tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
     X_train, X_test, y_train, y_test = tensors.tensor_creation()
     
@@ -58,9 +55,13 @@ def tester(dataset, features, model, scale=None): #Here plotting possibility??
 
 def forecast_maker(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
     
-    input_size = len(features)-2 #No power and no is_day
+    if "is_day" in features:
+        day_index =  features.index("is_day") #BCS power also feature
+        input_size = len(features)-1
+    else:
+        input_size = len(features)
+    
     #### SOURCE MODEL ########
-    day_index =  features.index("is_day")-1 #BCS power also feature
     source_model = LSTM(input_size,hidden_size,num_layers_source,num_layers_target, forecast_period, dropout, day_index).to(device)
     #Freeze the layers which are reserved for the target training
     

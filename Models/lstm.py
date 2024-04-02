@@ -43,7 +43,7 @@ class LSTM(nn.Module):
             night_mask = input[:,:,self.day_index]
             night_mask = night_mask.bool()
             night_mask = ~night_mask #Now it was True when day
-            if self.day_index == input.size(2): #If is_day is last feature we don't have to concat 2 tensors
+            if ((self.day_index+1) == input.size(2)): #If is_day is last feature we don't have to concat 2 tensors
                 bla = input[:,:,:self.day_index]
             else:
                 one = input[:,:,:self.day_index]
@@ -61,5 +61,5 @@ class LSTM(nn.Module):
         output = self.linear(hidden)
         if self.day_index is not None:
             output[night_mask] = 0
-            output[output<0] = 0 # Other physical post-processing, we know power cannot be below zero
+            #output[output<0] = 0 # Other physical post-processing, we know power cannot be below zero
         return output
