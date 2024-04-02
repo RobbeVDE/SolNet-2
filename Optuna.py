@@ -99,7 +99,7 @@ def objective(trial):
     eval_dataset = data.data[0]
 
     features = list(source_dataset.columns)
-    features = ['P', 'temperature_1_5m', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'PoA', 'P_24h_shift', "is_day"]
+    features = ['temperature_1_5m', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'PoA', 'P_24h_shift', "is_day"]
 
     
     accuracy = forecast_maker(source_dataset, target_dataset, features, eval_dataset, trial, optimizer_name, lr_source, lr_target,
