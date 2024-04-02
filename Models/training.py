@@ -156,6 +156,10 @@ class Training:
                 self.model.eval()
 
                 with torch.inference_mode():
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8fee239 (Solved rebase problem in training.py)
                     test_batches = iter(self.test_loader)
 
                     for input, output in test_batches:
@@ -170,6 +174,10 @@ class Training:
                 avg_test_error.append(total_loss_test / num_test_batches)
                 if early_stopper.early_stop(avg_test_error[-1]) and ES_option:
                     break
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8fee239 (Solved rebase problem in training.py)
                 self.trial.report(avg_test_error[-1], epoch)
                 if self.trial.should_prune():
                     raise optuna.exceptions.TrialPruned()
