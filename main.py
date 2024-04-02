@@ -52,6 +52,8 @@ def tester(dataset, features, model, scale=None): #Here plotting possibility??
     model.eval()
     with torch.no_grad():
         y_forecast = model(X)
+    y_truth = unscale(y_truth, scale[1], scale[0])
+    y_forecast = unscale(y_forecast, scale[1], scale[0])
     return y_truth, y_forecast
 
 def forecast_maker(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
@@ -155,3 +157,13 @@ def data_slicer(data, date_range):
     data = data[data.index.isin(date_range)]
 
     return data
+
+
+def unscale(y, max, min):
+    max= max['P']
+    min = min['P']
+    y = y*(max-min) + min
+
+    return y
+
+    
