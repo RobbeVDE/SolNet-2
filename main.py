@@ -88,7 +88,7 @@ def forecast_maker(source_data, target_data, features, eval_data, trial, optimiz
     y_truth = y_truth.cpu().detach().flatten().numpy()
     y_forecast = y_forecast.cpu().detach().flatten().numpy()
 
-    eval_rmse = np.mean(np.squared(np.subtract(y_truth, y_forecast)))
+    eval_rmse = np.mean(np.square(np.subtract(y_truth, y_forecast)))
 
     
     return eval_rmse

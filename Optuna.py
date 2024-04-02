@@ -4,6 +4,9 @@ from main import forecast_maker, data_slicer
 import pandas as pd
 from Data.Featurisation import Featurisation
 from optuna.trial import TrialState
+import logging
+import sys
+
 def objective(trial):
 
     # Generate the optimizersa and hyperparameters
@@ -94,8 +97,12 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=100, timeout=600)
+
+    optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
+    study_name = "example-study"  # Unique identifier of the study.
+    storage_name = "sqlite:///{}.db".format(study_name)
+    study = optuna.create_study(study_name=study_name, storage=storage_name, direction="minimize", load_if_exists=True)
+    study.optimize(objective, n_trials=100)
 
     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
     complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
