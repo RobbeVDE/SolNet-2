@@ -30,8 +30,8 @@ class LSTM(nn.Module):
         self.output_size = output_size
         self.dropout = dropout
         self.day_index = day_index
-
-        self.source_lstm = nn.LSTM(input_size, n_nodes_source, num_layers_source, dropout=dropout, batch_first=True)
+        if num_layers_source != 0:
+            self.source_lstm = nn.LSTM(input_size, n_nodes_source, num_layers_source, dropout=dropout, batch_first=True)
         self.target_lstm = nn.LSTM(n_nodes_source, n_nodes_target, num_layers_target, batch_first=True)
         self.linear = nn.Linear(in_features=n_nodes_target, out_features=output_size)
 
@@ -50,12 +50,14 @@ class LSTM(nn.Module):
             else:
                 one = input[:,:,:self.day_index]
                 two = input[:,:,self.day_index+1:]
-                bla = torch.cat((one, two), dim=2)
+                input_new = torch.cat((one, two), dim=2)
         else:
-            bla = input
-
-        hidden, _ = self.source_lstm(bla, None)
-        hidden, _ = self.target_lstm(hidden, None)
+            input_new = input
+        if self.num_layers_source != 0:
+            hidden, _ = self.source_lstm(input_new, None)
+            hidden, _ = self.target_lstm(hidden, None)
+        else:
+            hidden, _ = self.target_lstm(input_new, None)
         if hidden.dim() == 2:
             hidden = hidden[-1, :]
         else:

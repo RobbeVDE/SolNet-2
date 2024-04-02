@@ -14,7 +14,7 @@ def objective(trial):
     lr_source = trial.suggest_loguniform("lr_source", 1e-5, 1e-1)
     lr_target = trial.suggest_loguniform("lr_target", 1e-5, 1e-1)
 
-    n_layers_source = trial.suggest_int("n_layers_source", 1, 7)
+    n_layers_source = trial.suggest_int("n_layers_source", 0, 7)
     n_layers_target = trial.suggest_int("n_layers_target", 1, 7)
 
     n_nodes_source = trial.suggest_int("n_units_source",4,1024)
