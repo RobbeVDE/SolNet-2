@@ -8,9 +8,9 @@ class LSTM(nn.Module):
             hidden_size,
             num_layers_source,
             num_layers_target,
-            day_index,
             output_size,
-            dropout):
+            dropout,
+            day_index = None):
         """
         Simple LSTM model made in pytorch
         :param input_size: the size of the input (based on the lags provided)
@@ -39,15 +39,19 @@ class LSTM(nn.Module):
         :param input: the input tensor
         :return: output tensor
         """
-        night_mask = input[:,:,self.day_index]
-        night_mask = night_mask.bool()
-        night_mask = ~night_mask #Now it was True when day
-        if self.day_index == input.size(2): #If is_day is last feature we don't have to concat 2 strings
-            bla = input[:,:,:self.day_index]
+        if self.day_index is not None:
+            night_mask = input[:,:,self.day_index]
+            night_mask = night_mask.bool()
+            night_mask = ~night_mask #Now it was True when day
+            if self.day_index == input.size(2): #If is_day is last feature we don't have to concat 2 tensors
+                bla = input[:,:,:self.day_index]
+            else:
+                one = input[:,:,:self.day_index]
+                two = input[:,:,self.day_index+1:]
+                bla = torch.cat((one, two), dim=2)
         else:
-            one = input[:,:,:self.day_index]
-            two = input[:,:,self.day_index+1:]
-            bla = torch.cat((one, two), dim=2)
+            bla = input
+
         hidden, _ = self.source_lstm(bla, None)
         hidden, _ = self.target_lstm(hidden, None)
         if hidden.dim() == 2:
@@ -55,5 +59,7 @@ class LSTM(nn.Module):
         else:
             hidden = hidden[:, -1, :]
         output = self.linear(hidden)
-        output[night_mask] = 0
+        if self.day_index is not None:
+            output[night_mask] = 0
+            output[output<0] = 0 # Other physical post-processing, we know power cannot be below zero
         return output

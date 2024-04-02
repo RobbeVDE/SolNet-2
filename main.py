@@ -19,8 +19,8 @@ epochs = 100
 lags = 24
 forecast_period=24
 hidden_size = 400
-num_layers_source = 5
-num_layers_target = 2
+num_layers_source = 1
+num_layers_target = 5
 dropout = 0.3
 lr_source=0.001
 lr_target = 1e-5
@@ -59,7 +59,7 @@ def forecast_maker(source_data, target_data, features, eval_data, scale=None): #
     input_size = len(features)-2 #No power and no is_day
     #### SOURCE MODEL ########
     day_index =  features.index("is_day")-1 #BCS power also feature
-    source_model = LSTM(input_size,hidden_size,num_layers_source,num_layers_target, day_index, forecast_period, dropout).to(device)
+    source_model = LSTM(input_size,hidden_size,num_layers_source,num_layers_target, forecast_period, dropout, day_index).to(device)
     #Freeze the layers which are reserved for the target training
     
     
@@ -69,7 +69,7 @@ def forecast_maker(source_data, target_data, features, eval_data, scale=None): #
     
     #### TRANSFER MODEL #####
 
-    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, day_index, forecast_period, dropout).to(device)
+    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
     transfer_model.load_state_dict(source_state_dict)
 
     for param in transfer_model.source_lstm.parameters():
@@ -81,7 +81,7 @@ def forecast_maker(source_data, target_data, features, eval_data, scale=None): #
 
     ##### TEST MODEL ######
 
-    eval_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, day_index, forecast_period, dropout).to(device)
+    eval_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
     eval_model.load_state_dict(target_state_dict)
     y_truth, y_forecast = tester(eval_data, features, eval_model, scale=scale)
     

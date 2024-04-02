@@ -42,6 +42,5 @@ hourly_data["is_day"] = hourly_is_day
 
 hourly_dataframe = pd.DataFrame(data = hourly_data)
 hourly_dataframe.set_index('date', inplace=True)
-hourly_dataframe["is_day"] = hourly_dataframe["is_day"].astype(bool)
 print(hourly_dataframe["2016-05-01 03:00":"2016-05-01 09:00"])
-hourly_dataframe.to_pickle('is_day.pickle')
+hourly_dataframe.to_pickle('Data/is_day.pickle')
