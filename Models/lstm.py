@@ -46,7 +46,7 @@ class LSTM(nn.Module):
             night_mask = night_mask.bool()
             night_mask = ~night_mask #Now it was True when day
             if ((self.day_index+1) == input.size(2)): #If is_day is last feature we don't have to concat 2 tensors
-                bla = input[:,:,:self.day_index]
+                input_new = input[:,:,:self.day_index]
             else:
                 one = input[:,:,:self.day_index]
                 two = input[:,:,self.day_index+1:]
