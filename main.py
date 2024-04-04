@@ -53,12 +53,13 @@ def tester(dataset, features, model, scale=None): #Here plotting possibility??
     y_forecast = unscale(y_forecast, scale[1], scale[0])
     return y_truth, y_forecast
 
-def forecast_maker(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
+def TL_forecaster(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
     
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
         input_size = len(features)-1
     else:
+        day_index=None
         input_size = len(features)
     
     #### SOURCE MODEL ########
@@ -98,10 +99,40 @@ def forecast_maker(source_data, target_data, features, eval_data, scale=None): #
     
     return source_state_dict, target_state_dict, y_truth, y_forecast
 
-def target_renamer(dataset, original_name):
-    #Rename column with target to 'P' to simplify rest of code
-    dataset = dataset.rename(columns ={original_name:'P'})
-    return dataset
+def target_forecaster(target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
+    lr=1e-3
+    if "is_day" in features:
+        day_index =  features.index("is_day") #BCS power also feature
+        input_size = len(features)-1
+    else:
+        input_size = len(features)
+        
+    #### TRANSFER MODEL #####
+
+    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
+
+    
+    target_state_list, target_epoch = trainer(target_data, features, scale=scale, model=transfer_model, lr=lr)
+    target_state_dict = target_state_list[target_epoch]
+
+    ##### TEST MODEL ######
+
+    eval_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
+    eval_model.load_state_dict(target_state_dict)
+    y_truth, y_forecast = tester(eval_data, features, eval_model, scale=scale)
+    
+    y_truth = y_truth.cpu().detach().flatten().numpy()
+    y_forecast = y_forecast.cpu().detach().flatten().numpy()
+
+    eval_obj = Evaluation(y_truth, y_forecast)
+
+    print(eval_obj.metrics())
+
+    
+    return target_state_dict, y_truth, y_forecast
+
+
+
 
 def CS_power(dataset, latitude, longitude, peak_power):
     PV_power = dataset['P']
@@ -151,13 +182,6 @@ def eval_plotter(truth, forecast, start="2021-08-01", end="2022-08-03"):
     plt.xlabel("Date")
     plt.ylabel("Photovoltaic Power [kWh]")
 
-def data_slicer(data, date_range):
-    """
-    Take a slice of the data which belongs to the desired date_range
-    """
-    data = data[data.index.isin(date_range)]
-
-    return data
 
 
 def unscale(y, max, min):

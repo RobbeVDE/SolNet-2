@@ -61,5 +61,5 @@ class LSTM(nn.Module):
         output = self.linear(hidden)
         if self.day_index is not None:
             output[night_mask] = 0
-            #output[output<0] = 0 # Other physical post-processing, we know power cannot be below zero
+            output[output<0] = 0 # Other physical post-processing, we know power cannot be below zero
         return output
