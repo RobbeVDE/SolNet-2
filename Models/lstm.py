@@ -32,7 +32,9 @@ class LSTM(nn.Module):
         self.day_index = day_index
         if num_layers_source != 0:
             self.source_lstm = nn.LSTM(input_size, n_nodes_source, num_layers_source, dropout=dropout, batch_first=True)
-        self.target_lstm = nn.LSTM(n_nodes_source, n_nodes_target, num_layers_target, batch_first=True)
+            self.target_lstm = nn.LSTM(n_nodes_source, n_nodes_target, num_layers_target, batch_first=True)
+        else:
+            self.target_lstm = nn.LSTM(input_size,n_nodes_target, num_layers_target, batch_first=True)
         self.linear = nn.Linear(in_features=n_nodes_target, out_features=output_size)
 
     def forward(self, input):
@@ -65,5 +67,5 @@ class LSTM(nn.Module):
         output = self.linear(hidden)
         if self.day_index is not None:
             output[night_mask] = 0
-            output[output<0] = 0 # Other physical post-processing, we know power cannot be below zero
+            #output[output<0] = 0 # Other physical post-processing, we know power cannot be below zero
         return output

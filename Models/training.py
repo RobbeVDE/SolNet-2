@@ -27,6 +27,8 @@ class Training:
             y_train,
             X_test,
             y_test,
+            X_eval,
+            y_eval,
             epochs,
             optimizer_name,
             trial,
@@ -50,6 +52,7 @@ class Training:
 
         train_data = TensorDataset(X_train.to(self.device), y_train.to(self.device))
         test_data = TensorDataset(X_test.to(self.device), y_test.to(self.device))
+        eval_data = TensorDataset(X_eval.to(self.device), y_eval.to(self.device))
 
         days = y_train.shape[0] + y_test.shape[0]
         self.months = round(days / 30.5)
@@ -60,6 +63,7 @@ class Training:
         else:
             self.train_loader = DataLoader(train_data, batch_size=batch_size)
             self.test_loader = DataLoader(test_data, batch_size=batch_size)
+            self.eval_loader = DataLoader(eval_data, batch_size=batch_size)
 
         self.trial = trial
         self.model = model
@@ -122,15 +126,8 @@ class Training:
 
                     avg_train_error.append(total_loss / num_train_batches)
                     avg_test_error.append(total_loss_test / num_test_batches)
-                    self.trial.report(avg_test_error[-1], epoch)
-                    if self.trial.should_prune():
-                        raise optuna.exceptions.TrialPruned()
-                    state_dict_list.append(self.model.state_dict())
-
-                    if epoch % 5 == 0:
-                        print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch,
-                                                                                                    avg_train_error[fold*100+epoch],
-                                                                                                    avg_test_error[fold*100+epoch]))
+                    state_dict_list.append(self.model.state_dict())   
+                         
                     #### STILL HAVE TO RESET WEIGHTS AFTER FOLD ####
         else:
             early_stopper = EarlyStopper(patience=5, min_delta=0.005)
@@ -170,15 +167,32 @@ class Training:
                 avg_test_error.append(total_loss_test / num_test_batches)
                 if early_stopper.early_stop(avg_test_error[-1]) and ES_option:
                     break
-                self.trial.report(avg_test_error[-1], epoch)
-                if self.trial.should_prune():
-                    raise optuna.exceptions.TrialPruned()
+                
                 state_dict_list.append(self.model.state_dict())
 
                 if epoch % 5 == 0:
-                    print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch,
-                                                                                                avg_train_error[epoch],
-                                                                                                avg_test_error[epoch]))
+                    total_loss_eval = 0
+                    num_eval_batches = 0
+                    with torch.inference_mode():                                   
+                        eval_batches = iter(self.eval_loader)
+
+                        for input, output in eval_batches:
+                            prediction = self.model(input)
+                            output = output.squeeze()
+                            eval_loss = self.criterion(prediction, output)
+
+                            total_loss_eval += float(eval_loss)
+                            num_eval_batches += 1
+
+                    avg_eval_loss = total_loss_eval/num_eval_batches        
+                    self.trial.report(avg_eval_loss, epoch)
+                    if self.trial.should_prune():
+                        raise optuna.exceptions.TrialPruned()
+                    print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f} | Average eval loss: {:.4f}'.format(epoch,
+                                                                                                    avg_train_error[epoch],
+                                                                                                avg_test_error[epoch], avg_eval_loss))
+                
+
 
         argmin_test = avg_test_error.index(min(avg_test_error))
 

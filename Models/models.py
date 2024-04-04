@@ -28,7 +28,8 @@ lr_target = 1e-5
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
+def TL(source_data, target_data, features, eval_data, trial, optimizer_name, lr_source, lr_target, n_layers_source, 
+                   n_layers_target, n_nodes_source, n_nodes_target, batch_size_source, batch_size_target, dropout,scale=None): #, hyper_tuning, transposition,
     
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
@@ -42,7 +43,8 @@ def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuni
     #Freeze the layers which are reserved for the target training
     
     
-    source_state_list, source_epoch = trainer(source_data, features,trial, optimizer_name, batch_size_source, learning_rate=lr_source, model=source_model, scale=scale)
+    source_state_list, source_epoch = trainer(source_data, features,trial, optimizer_name, batch_size_source, 
+                                              lr=lr_source, model=source_model, scale=scale, eval_dataset=eval_data)
 
     source_state_dict = source_state_list[source_epoch]
     
@@ -55,7 +57,8 @@ def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuni
     
     
 
-    target_state_list, target_epoch = trainer(target_data, features, trial, optimizer_name, batch_size_target, learning_rate=lr_target,scale=scale, model=transfer_model)
+    target_state_list, target_epoch = trainer(target_data, features, trial, optimizer_name, batch_size_target,
+                                               lr=lr_target,scale=scale, model=transfer_model, eval_dataset=eval_data)
     target_state_dict = target_state_list[target_epoch]
 
     ##### TEST MODEL ######
@@ -71,8 +74,8 @@ def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuni
     
     return target_state_dict, eval_obj
 
-def target(target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
-    lr=1e-3
+def target(target_data, features, eval_data, trial, optimizer_name, lr_target,
+           n_layers_target, n_nodes_target, batch_size_target, scale=None): #, hyper_tuning, transposition,
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
         input_size = len(features)-1
@@ -81,15 +84,15 @@ def target(target_data, features, eval_data, scale=None): #, hyper_tuning, trans
         
     #### TRANSFER MODEL #####
 
-    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
+    transfer_model = LSTM(input_size, 0, n_layers_target, 0, n_nodes_target, forecast_period, day_index).to(device)
 
     
-    target_state_list, target_epoch = trainer(target_data, features, scale=scale, model=transfer_model, lr=lr)
+    target_state_list, target_epoch = trainer(target_data, features, trial, optimizer_name, batch_size_target, lr=lr_target,scale=scale, model=transfer_model, eval_dataset=eval_data)
     target_state_dict = target_state_list[target_epoch]
 
     ##### TEST MODEL ######
 
-    eval_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
+    eval_model = LSTM(input_size, 0, n_layers_target, 0, n_nodes_target, forecast_period, dropout, day_index).to(device)
     eval_model.load_state_dict(target_state_dict)
     y_truth, y_forecast = tester(eval_data, features, eval_model, scale=scale)
     
@@ -110,17 +113,20 @@ def persistence(dataset):
     return eval_obj
 
 
-def trainer(dataset, features,  model=None,scale=None, lr=0.001, criterion=torch.nn.MSELoss()):
+def trainer(dataset, features, trial, optimizer_name, batch_size=32, model=None,scale=None, lr=0.001, criterion=torch.nn.MSELoss(), eval_dataset=None):
 
 
     tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
     X_train, X_test, y_train, y_test = tensors.tensor_creation()
-    
     print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
-    # Initialize the trainer
-    training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=lr, criterion=criterion)
+    if eval_dataset is not None:
+        tensors =  Tensorisation(eval_dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
+        X_eval, y_eval = tensors.evaluation_tensor_creation()
 
+    # Initialize the trainer
+    training = Training(model, X_train, y_train, X_test, y_test, X_eval, y_eval, epochs, optimizer_name, trial, batch_size=batch_size, 
+                        learning_rate=lr, criterion=criterion)
     # Train the model and return the trained parameters and the best iteration
     state_dict_list, best_epoch = training.fit()
 
