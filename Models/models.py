@@ -27,33 +27,8 @@ lr_target = 1e-5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def trainer(dataset, features,  model=None,scale=None, lr=0.001, criterion=torch.nn.MSELoss()):
 
-
-    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
-    X_train, X_test, y_train, y_test = tensors.tensor_creation()
-    
-    print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-
-    # Initialize the trainer
-    training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=lr, criterion=criterion)
-
-    # Train the model and return the trained parameters and the best iteration
-    state_dict_list, best_epoch = training.fit()
-
-    return state_dict_list, best_epoch
-def tester(dataset, features, model, scale=None): #Here plotting possibility??
-    #In evaluation data the power should be removed and can then be compared
-    tensor = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
-    X, y_truth = tensor.evaluation_tensor_creation()
-    model.eval()
-    with torch.no_grad():
-        y_forecast = model(X)
-    y_truth = unscale(y_truth, scale[1], scale[0])
-    y_forecast = unscale(y_forecast, scale[1], scale[0])
-    return y_truth, y_forecast
-
-def TL_forecaster(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
+def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
     
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
@@ -94,12 +69,10 @@ def TL_forecaster(source_data, target_data, features, eval_data, scale=None): #,
 
     eval_obj = Evaluation(y_truth, y_forecast)
 
-    print(eval_obj.metrics())
-
     
-    return source_state_dict, target_state_dict, y_truth, y_forecast
+    return target_state_dict, eval_obj
 
-def target_forecaster(target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
+def target(target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
     lr=1e-3
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
@@ -126,10 +99,44 @@ def target_forecaster(target_data, features, eval_data, scale=None): #, hyper_tu
 
     eval_obj = Evaluation(y_truth, y_forecast)
 
-    print(eval_obj.metrics())
-
     
-    return target_state_dict, y_truth, y_forecast
+    return target_state_dict, eval_obj
+
+def persistence(dataset):
+
+    y_forecast = dataset['P_24h_shift']
+    y_truth = dataset['P']
+    eval_obj = Evaluation(y_truth, y_forecast)
+
+    return eval_obj
+
+
+def trainer(dataset, features,  model=None,scale=None, lr=0.001, criterion=torch.nn.MSELoss()):
+
+
+    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
+    X_train, X_test, y_train, y_test = tensors.tensor_creation()
+    
+    print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+
+    # Initialize the trainer
+    training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=lr, criterion=criterion)
+
+    # Train the model and return the trained parameters and the best iteration
+    state_dict_list, best_epoch = training.fit()
+
+    return state_dict_list, best_epoch
+
+def tester(dataset, features, model, scale=None): #Here plotting possibility??
+    #In evaluation data the power should be removed and can then be compared
+    tensor = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
+    X, y_truth = tensor.evaluation_tensor_creation()
+    model.eval()
+    with torch.no_grad():
+        y_forecast = model(X)
+    y_truth = unscale(y_truth, scale[1], scale[0])
+    y_forecast = unscale(y_forecast, scale[1], scale[0])
+    return y_truth, y_forecast
 
 
 

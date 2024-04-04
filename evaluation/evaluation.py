@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import scipy.stats as stat
-
+import seaborn as sns
 from util import formulas as fm
 
 from matplotlib import pyplot as plt
