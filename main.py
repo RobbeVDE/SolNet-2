@@ -72,7 +72,7 @@ def forecast_maker(source_data, target_data, features, eval_data, trial, optimiz
     #### TRANSFER MODEL #####
     transfer_model = LSTM(input_size, n_layers_source, n_layers_target, n_nodes_source, n_nodes_target, forecast_period, dropout, day_index).to(device)
     transfer_model.load_state_dict(source_state_dict)
-    if num_layers_source != 0:
+    if n_layers_source != 0:
         for param in transfer_model.source_lstm.parameters():
             param.requires_grad = False
     
