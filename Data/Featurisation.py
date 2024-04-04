@@ -1,6 +1,6 @@
 import numpy as np
 import pickle
-import pandas
+import pandas as pd
 from pvlib import location
 from pvlib import irradiance
 
@@ -18,6 +18,24 @@ def _load_data(file_path):
 
     return data
 
+def data_slicer(data, date_range):
+    """
+    Take a slice of the data which belongs to the desired date_range
+    """
+    data = data[data.index.isin(date_range)]
+
+    return data
+def merge_slice(range, *args):
+
+    merged = pd.DataFrame(index = range)
+    for arg in args:
+        merged = pd.merge(merged, data_slicer(arg, range), right_index=True, left_index=True, how='inner')
+    return merged
+    
+def target_renamer(dataset, original_name):
+    #Rename column with target to 'P' to simplify rest of code
+    dataset = dataset.rename(columns ={original_name:'P'})
+    return dataset            
 
 class Featurisation:
 
@@ -104,30 +122,130 @@ class Featurisation:
 
         return self.data
     
-    def remove_outliers(self, GHI_name = 'downward_surface_SW_flux', tolerance = 50): 
+    def remove_outliers(self, GHI_name = 'downward_surface_SW_flux', tolerance = 50, outlier_list = None): 
         """"
         Remove data entries where the power of PV is 0 but GHI is higher than a specified tolerance
         Take a 50 default tolerance, bcs there seem to be no power produced at beginning of day when irrad really low
         but want machine to learn this bcs this is not an outlier
         """
+        if outlier_list is None:
+            outlier_list = [True] * len(self.data)
         for i in range(len(self.data)):
-            dataset = self.data[i]
-            mask = (dataset['P'] == 0) * (dataset[GHI_name] > tolerance)
-            indices = dataset[mask].index
-            dates = list(indices.date)
-            dataset['date'] = dataset.index.date
-            dataset = dataset[~dataset.date.isin(dates)]
-            self.data[i] = dataset.drop('date', axis=1)
+            if outlier_list[i]:
+                dataset = self.data[i]
+                mask = (dataset['P'] == 0) * (dataset[GHI_name] > tolerance)
+                indices = dataset[mask].index
+                dates = list(indices.date)
+                dataset['date'] = dataset.index.date
+                dataset = dataset[~dataset.date.isin(dates)]
+                self.data[i] = dataset.drop('date', axis=1)
 
         return self.data
     
-    def inverter_limit(self, inverter_rating):
+    def inverter_limit(self, inverter_rating, inv_list):
         """
         Add inverter rating which is not possible for PVGIS
         """
         for i in range(len(self.data)):
-            dataset = self.data[i]['P']
-            dataset[dataset>inverter_rating] = inverter_rating
-            self.data[i]['P'] = dataset
+            if inv_list[i]:
+                dataset = self.data[i]['P']
+                dataset[dataset>inverter_rating] = inverter_rating
+                self.data[i]['P'] = dataset
         return self.data
+    
+
+    
+def data_handeler(source=None, target=None, eval=None, transform = True, month_source=False):
+    """
+    Add explation, maybe more general power function if we use more test setups
+    RETURNS source data, target_data, eval_data
+    """
+    #Month ranges, maybe option to specify this with function
+    if month_source:   
+        source_range = pd.date_range("2019-08-01", "2019-08-31 23:00", freq='h', tz="UTC")
+    else:
+        source_range = pd.date_range("2016-05-01","2020-07-31 23:00", freq='h', tz="UTC")
+
+    target_range = pd.date_range("2020-08-01", "2020-08-31 23:00", freq='h', tz="UTC")
+    eval_range = pd.date_range("2020-09-01", "2021-07-31 23:00", tz="UTC", freq='h')
+
+    #Data intakeer
+    openmeteo = pd.read_pickle("Data/openmeteo.pickle")
+
+    pvgis = pd.read_pickle('Data/PVGIS.pickle')
+
+    ceda = pd.read_pickle("CEDA_dataNL.pickle")
+    is_day = pd.read_pickle("Data/is_day.pickle")
+
+    meteo2CEDA = {'temperature_2m' :'temperature_1_5m', 
+                "relative_humidity_2m":"relative_humidity_1_5m", 
+                "pressure_msl": "pressure_MSL",
+                "cloud_cover":"total_cloud_amount",
+                "shortwave_radiation": "downward_surface_SW_flux",
+                "diffuse_radiation":"diffuse_surface_SW_flux",
+                "direct_normal_irradiance":"direct_surface_SW_flux",
+                "wind_speed_10m": "wind_speed_10m",
+                "wind_direction_10m": "wind_direction_10m"
+                }
+    openmeteo = openmeteo.rename(columns=meteo2CEDA)
+
+    #NL production data
+    installation_id = "3437BD60"
+    prodNL = pd.read_parquet('Data/production.parquet', engine='pyarrow')
+    metadata = pd.read_csv("Data/installations Netherlands.csv", sep=';')
+    metadata = metadata.set_index('id')
+    metadata_id = metadata.loc[installation_id]
+    tilt = metadata_id["Tilt"]
+    peakPower = metadata_id["Watt Peak"]
+    azimuth = metadata_id["Orientation"]
+    latitude = metadata_id["Latitude"]
+    longitude = metadata_id["Longitude"]
+    power = prodNL.loc[installation_id]
+    power = target_renamer(power, 'watt')
+    power = power.resample('h').sum()/4
+    power = power.tz_localize('UTC')
+
+    #Merge right data to have source, target and eval dataset
+    list = [eval, target, source]
+    power_list = [power, power, pvgis]
+    range_list = [eval_range, target_range,source_range]
+    data = []
+    for i, entry in enumerate(list):
+        if entry == "ceda":
+            covariates = ceda
+        elif entry == "openmeteo":
+            covariates = openmeteo
+        elif entry is None:
+            break
+        else:
+            raise KeyError
+        
+        if transform:
+            data.append(merge_slice(range_list[i], power_list[i], covariates, is_day))
+        else:
+            data.append(merge_slice(range_list[i], power_list[i], covariates))
+
+    #Add extra variates
+    data = Featurisation(data)
+    data.data = data.cyclic_features()
+    data.data = data.add_shift('P')
+    data.data = data.cyclic_angle('wind_direction_10m')
+    if transform:
+        data.data = data.PoA(latitude, longitude, tilt, azimuth)
+        outlier_list = [False, True, True] #No outliers removed for evaluation as this is not 
+        inv_list = [False, False, True] #Pre-processing only allowed for 
+        data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
+        data.data = data.inverter_limit(2500, inv_list)
+
+    if source is not None:
+        source_dataset = data.data[2]
+    if target is not None:
+        target_dataset = data.data[1]
+    if eval is not None:
+        eval_dataset= data.data[0]
+    
+    return source_dataset, target_dataset, eval_dataset 
+
+
+      
 

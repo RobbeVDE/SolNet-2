@@ -27,37 +27,14 @@ lr_target = 1e-5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def trainer(dataset, features, trial, optimizer_name, batch_size = 32, model=None,scale=None, learning_rate=0.001, criterion=torch.nn.MSELoss()):
 
-    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
-    X_train, X_test, y_train, y_test = tensors.tensor_creation()
+def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
     
-    print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-
-    # Initialize the trainer
-    training = Training(model, X_train, y_train, X_test, y_test, epochs,optimizer_name, trial, batch_size=batch_size, learning_rate=learning_rate, criterion=criterion)
-
-    # Train the model and return the trained parameters and the best iteration
-    state_dict_list, best_epoch = training.fit()
-
-    return state_dict_list, best_epoch
-def tester(dataset, features, model, scale=None): #Here plotting possibility??
-    #In evaluation data the power should be removed and can then be compared
-    tensor = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
-    X, y_truth = tensor.evaluation_tensor_creation()
-    model.eval()
-    with torch.no_grad():
-        y_forecast = model(X)
-    y_truth = unscale(y_truth, scale[1], scale[0])
-    y_forecast = unscale(y_forecast, scale[1], scale[0])
-    return y_truth, y_forecast
-
-def forecast_maker(source_data, target_data, features, eval_data, trial, optimizer_name, lr_source, lr_target, n_layers_source, 
-                   n_layers_target, n_nodes_source, n_nodes_target, batch_size_source, batch_size_target, dropout,scale=None): #, hyper_tuning, transposition,
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
         input_size = len(features)-1
     else:
+        day_index=None
         input_size = len(features)
     #### SOURCE MODEL ########
 
@@ -89,15 +66,79 @@ def forecast_maker(source_data, target_data, features, eval_data, trial, optimiz
     y_truth = y_truth.cpu().detach().flatten().numpy()
     y_forecast = y_forecast.cpu().detach().flatten().numpy()
 
-    eval_rmse = np.mean(np.square(np.subtract(y_truth, y_forecast)))
+    eval_obj = Evaluation(y_truth, y_forecast)
 
     
-    return eval_rmse
+    return target_state_dict, eval_obj
 
-def target_renamer(dataset, original_name):
-    #Rename column with target to 'P' to simplify rest of code
-    dataset = dataset.rename(columns ={original_name:'P'})
-    return dataset
+def target(target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
+    lr=1e-3
+    if "is_day" in features:
+        day_index =  features.index("is_day") #BCS power also feature
+        input_size = len(features)-1
+    else:
+        input_size = len(features)
+        
+    #### TRANSFER MODEL #####
+
+    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
+
+    
+    target_state_list, target_epoch = trainer(target_data, features, scale=scale, model=transfer_model, lr=lr)
+    target_state_dict = target_state_list[target_epoch]
+
+    ##### TEST MODEL ######
+
+    eval_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
+    eval_model.load_state_dict(target_state_dict)
+    y_truth, y_forecast = tester(eval_data, features, eval_model, scale=scale)
+    
+    y_truth = y_truth.cpu().detach().flatten().numpy()
+    y_forecast = y_forecast.cpu().detach().flatten().numpy()
+
+    eval_obj = Evaluation(y_truth, y_forecast)
+
+    
+    return target_state_dict, eval_obj
+
+def persistence(dataset):
+
+    y_forecast = dataset['P_24h_shift']
+    y_truth = dataset['P']
+    eval_obj = Evaluation(y_truth, y_forecast)
+
+    return eval_obj
+
+
+def trainer(dataset, features,  model=None,scale=None, lr=0.001, criterion=torch.nn.MSELoss()):
+
+
+    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
+    X_train, X_test, y_train, y_test = tensors.tensor_creation()
+    
+    print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+
+    # Initialize the trainer
+    training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=lr, criterion=criterion)
+
+    # Train the model and return the trained parameters and the best iteration
+    state_dict_list, best_epoch = training.fit()
+
+    return state_dict_list, best_epoch
+
+def tester(dataset, features, model, scale=None): #Here plotting possibility??
+    #In evaluation data the power should be removed and can then be compared
+    tensor = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
+    X, y_truth = tensor.evaluation_tensor_creation()
+    model.eval()
+    with torch.no_grad():
+        y_forecast = model(X)
+    y_truth = unscale(y_truth, scale[1], scale[0])
+    y_forecast = unscale(y_forecast, scale[1], scale[0])
+    return y_truth, y_forecast
+
+
+
 
 def CS_power(dataset, latitude, longitude, peak_power):
     PV_power = dataset['P']
@@ -147,13 +188,6 @@ def eval_plotter(truth, forecast, start="2021-08-01", end="2022-08-03"):
     plt.xlabel("Date")
     plt.ylabel("Photovoltaic Power [kWh]")
 
-def data_slicer(data, date_range):
-    """
-    Take a slice of the data which belongs to the desired date_range
-    """
-    data = data[data.index.isin(date_range)]
-
-    return data
 
 
 def unscale(y, max, min):

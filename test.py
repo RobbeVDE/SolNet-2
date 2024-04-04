@@ -1,3 +1,8 @@
-import xarray as xr
+from Data.Featurisation import Featurisation, data_handeler
 
-print(xr.load_dataset("test.grib", engine='cfgrib'))
+source_dataset, target_dataset, eval_dataset = data_handeler("ceda", "ceda", "ceda", transform=True, month_source=False)
+
+print(source_dataset)
+print(target_dataset)
+print(eval_dataset)
+
