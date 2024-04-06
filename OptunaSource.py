@@ -22,7 +22,7 @@ def objective(trial):
     batch_size = trial.suggest_int("Batch_size_source", 4,64)
     # Get data
 
-    source_dataset, target_dataset, eval_dataset = data_handeler("ceda", "ceda", "ceda", transform=True, month_source=True)
+    source_dataset, target_dataset, eval_dataset = data_handeler("ceda", "ceda", "ceda", transform=True, month_source=False)
     min = source_dataset.min(axis=0).to_dict()
     max = source_dataset.max(axis=0).to_dict()
 
