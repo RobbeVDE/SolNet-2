@@ -5,10 +5,8 @@ class LSTM(nn.Module):
     def __init__(
             self,
             input_size,
-            num_layers_source,
-            num_layers_target,
-            n_nodes_source,
-            n_nodes_target,
+            hidden_size,
+            num_layers,
             output_size,
             dropout,
             day_index = None):
@@ -23,19 +21,14 @@ class LSTM(nn.Module):
         super().__init__()
 
         self.input_size = input_size
-        self.hidden_size_source = n_nodes_source
-        self.hidden_size_target = n_nodes_target
-        self.num_layers_source = num_layers_source
-        self.num_layers_target = num_layers_target
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
         self.output_size = output_size
         self.dropout = dropout
         self.day_index = day_index
-        if num_layers_source != 0:
-            self.source_lstm = nn.LSTM(input_size, n_nodes_source, num_layers_source, dropout=dropout, batch_first=True)
-            self.target_lstm = nn.LSTM(n_nodes_source, n_nodes_target, num_layers_target, batch_first=True)
-        else:
-            self.target_lstm = nn.LSTM(input_size,n_nodes_target, num_layers_target, batch_first=True)
-        self.linear = nn.Linear(in_features=n_nodes_target, out_features=output_size)
+
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, dropout=dropout, batch_first=True)
+        self.linear = nn.Linear(in_features=hidden_size, out_features=output_size)
 
     def forward(self, input):
         """
@@ -55,11 +48,8 @@ class LSTM(nn.Module):
                 input_new = torch.cat((one, two), dim=2)
         else:
             input_new = input
-        if self.num_layers_source != 0:
-            hidden, _ = self.source_lstm(input_new, None)
-            hidden, _ = self.target_lstm(hidden, None)
-        else:
-            hidden, _ = self.target_lstm(input_new, None)
+        
+        hidden, _ = self.lstm(input_new, None)
         if hidden.dim() == 2:
             hidden = hidden[-1, :]
         else:

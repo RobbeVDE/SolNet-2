@@ -27,6 +27,33 @@ lr_target = 1e-5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+def source(dataset, features, scale):
+    if "is_day" in features:
+        day_index =  features.index("is_day") #BCS power also feature
+        input_size = len(features)-1
+    else:
+        day_index=None
+        input_size = len(features)
+    
+    source_model = LSTM(input_size,hidden_size,num_layers_source, forecast_period, dropout, day_index).to(device)
+        
+    source_state_list, source_epoch = trainer(dataset, features,model=source_model, scale=scale, lr=lr_source)
+
+    source_state_dict = source_state_list[source_epoch]
+
+    return source_state_dict
+    
+def target(dataset, features, scale, source_state_dict=None):
+    if "is_day" in features:
+        day_index =  features.index("is_day") #BCS power also feature
+        input_size = len(features)-1
+    else:
+        day_index=None
+        input_size = len(features)
+    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
+    if source_state_dict is not None:
+        transfer_model.load_state_dict(source_state_dict)
+    
 
 def TL(source_data, target_data, features, eval_data, trial, optimizer_name, lr_source, lr_target, n_layers_source, 
                    n_layers_target, n_nodes_source, n_nodes_target, batch_size_source, batch_size_target, dropout,scale=None): #, hyper_tuning, transposition,
