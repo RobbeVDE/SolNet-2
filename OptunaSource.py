@@ -31,9 +31,9 @@ def objective(trial):
     features = ['temperature_1_5m', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'PoA', 'P_24h_shift', "is_day"]
 
     
-    _,eval_obj = source(source_dataset, features, trial, optimizer_name, lr, n_layers, n_nodes, batch_size, dropout)
+    accuracy= source(source_dataset, features, trial, optimizer_name, lr, n_layers, n_nodes, batch_size, dropout)
 
-    accuracy = eval_obj.metrics()['RMSE']
+
 
     return accuracy
 
