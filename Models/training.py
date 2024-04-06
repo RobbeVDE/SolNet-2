@@ -1,9 +1,10 @@
 import torch
 from torch.utils.data import DataLoader, TensorDataset, ConcatDataset
+from torch import nn
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
-cross_validate = False
+cross_validate = True
 ES_option = False # Option to use early stopping
 import optuna
 import torch.optim as optim
@@ -27,8 +28,6 @@ class Training:
             y_train,
             X_test,
             y_test,
-            X_eval,
-            y_eval,
             epochs,
             optimizer_name,
             trial,
@@ -52,7 +51,6 @@ class Training:
 
         train_data = TensorDataset(X_train.to(self.device), y_train.to(self.device))
         test_data = TensorDataset(X_test.to(self.device), y_test.to(self.device))
-        eval_data = TensorDataset(X_eval.to(self.device), y_eval.to(self.device))
 
         days = y_train.shape[0] + y_test.shape[0]
         self.months = round(days / 30.5)
@@ -63,7 +61,6 @@ class Training:
         else:
             self.train_loader = DataLoader(train_data, batch_size=batch_size)
             self.test_loader = DataLoader(test_data, batch_size=batch_size)
-            self.eval_loader = DataLoader(eval_data, batch_size=batch_size)
 
         self.trial = trial
         self.model = model
@@ -81,7 +78,11 @@ class Training:
         avg_test_error = []
         state_dict_list = []
         if cross_validate:
+            fold_avg_test_loss = []
             for fold, (train_ids, test_ids) in enumerate(self.kfold.split(self.total_data)):
+                avg_train_error = []
+                avg_test_error = []
+                state_dict_list = []
                 print(f'FOLD {fold}')
                 print('-----------------------')
 
@@ -124,11 +125,35 @@ class Training:
                             total_loss_test += float(test_loss)
                             num_test_batches += 1
 
-                    avg_train_error.append(total_loss / num_train_batches)
-                    avg_test_error.append(total_loss_test / num_test_batches)
-                    state_dict_list.append(self.model.state_dict())   
-                         
-                    #### STILL HAVE TO RESET WEIGHTS AFTER FOLD ####
+                        avg_train_error.append(total_loss / num_train_batches)
+                        avg_test_error.append(total_loss_test / num_test_batches)
+                        state_dict_list.append(self.model.state_dict())
+                        self.trial.report(avg_test_error[-1], epoch)   
+                        if self.trial.should_prune():
+                            raise optuna.exceptions.TrialPruned()
+                        if epoch % 5 == 0:
+                            print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch, avg_train_error[epoch],
+                                                                                                        avg_test_error[epoch]))
+                
+                fold_argmin_test = avg_test_error.index(min(avg_test_error))
+
+                fold_avg_test_loss.append(avg_test_error[fold_argmin_test])
+
+                ### RESET WEIGHTS
+                for name, module in self.model.named_children():
+                    print('resetting ', name)
+                    module.reset_parameters()
+
+                print(f'Best Epoch for fold{fold}: ' + str(fold_argmin_test))
+
+                plt.plot(avg_train_error, label='train error ' + str(self.months) + ' months')
+                plt.plot(avg_test_error, label='test error ' + str(self.months) + ' months')
+                plt.legend()
+            
+            
+            avg_error = np.mean(fold_avg_test_loss)
+            print(f"Average error:{avg_error}")
+            return avg_error
         else:
             early_stopper = EarlyStopper(patience=5, min_delta=0.005)
             for epoch in range(self.epochs):
@@ -169,40 +194,24 @@ class Training:
                     break
                 
                 state_dict_list.append(self.model.state_dict())
-
+                self.trial.report(avg_train_error[-1], epoch)
+                if self.trial.should_prune():
+                    raise optuna.exceptions.TrialPruned()
                 if epoch % 5 == 0:
-                    total_loss_eval = 0
-                    num_eval_batches = 0
-                    with torch.inference_mode():                                   
-                        eval_batches = iter(self.eval_loader)
-
-                        for input, output in eval_batches:
-                            prediction = self.model(input)
-                            output = output.squeeze()
-                            eval_loss = self.criterion(prediction, output)
-
-                            total_loss_eval += float(eval_loss)
-                            num_eval_batches += 1
-
-                    avg_eval_loss = total_loss_eval/num_eval_batches        
-                    self.trial.report(avg_eval_loss, epoch)
-                    if self.trial.should_prune():
-                        raise optuna.exceptions.TrialPruned()
-                    print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f} | Average eval loss: {:.4f}'.format(epoch,
-                                                                                                    avg_train_error[epoch],
-                                                                                                avg_test_error[epoch], avg_eval_loss))
+                    print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch, avg_train_error[epoch],
+                                                                                                avg_test_error[epoch]))
                 
 
 
-        argmin_test = avg_test_error.index(min(avg_test_error))
+            argmin_test = avg_test_error.index(min(avg_test_error))
 
-        print('Best Epoch: ' + str(argmin_test))
+            print('Best Epoch: ' + str(argmin_test))
 
-        plt.plot(avg_train_error, label='train error ' + str(self.months) + ' months')
-        plt.plot(avg_test_error, label='test error ' + str(self.months) + ' months')
-        plt.legend()
+            plt.plot(avg_train_error, label='train error ' + str(self.months) + ' months')
+            plt.plot(avg_test_error, label='test error ' + str(self.months) + ' months')
+            plt.legend()
 
-        return state_dict_list, argmin_test
+            return state_dict_list, argmin_test
 
 
 class EarlyStopper:

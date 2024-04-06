@@ -6,7 +6,7 @@ from evaluation.evaluation import Evaluation
 from Models.training import Training
 from Models.lstm import LSTM
 from pvlib.pvsystem import PVSystem, FixedMount
-import numpy as np
+
 from pvlib.modelchain import ModelChain
 
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
@@ -27,7 +27,7 @@ lr_target = 1e-5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def source(dataset, features, scale):
+def source(dataset, features, trial, optimizer_name, lr, n_layers, n_nodes, batch_size, dropout):
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
         input_size = len(features)-1
@@ -35,13 +35,11 @@ def source(dataset, features, scale):
         day_index=None
         input_size = len(features)
     
-    source_model = LSTM(input_size,hidden_size,num_layers_source, forecast_period, dropout, day_index).to(device)
+    source_model = LSTM(input_size,n_nodes,n_layers, forecast_period, dropout, day_index).to(device)
         
-    source_state_list, source_epoch = trainer(dataset, features,model=source_model, scale=scale, lr=lr_source)
+    avg_error = trainer(dataset, features, model=source_model, lr=lr, trial=trial, optimizer_name=optimizer_name, batch_size=batch_size)
 
-    source_state_dict = source_state_list[source_epoch]
-
-    return source_state_dict
+    return avg_error
     
 def target(dataset, features, scale, source_state_dict=None):
     if "is_day" in features:
@@ -51,12 +49,12 @@ def target(dataset, features, scale, source_state_dict=None):
         day_index=None
         input_size = len(features)
     transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
+    
     if source_state_dict is not None:
         transfer_model.load_state_dict(source_state_dict)
     
 
-def TL(source_data, target_data, features, eval_data, trial, optimizer_name, lr_source, lr_target, n_layers_source, 
-                   n_layers_target, n_nodes_source, n_nodes_target, batch_size_source, batch_size_target, dropout,scale=None): #, hyper_tuning, transposition,
+def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
     
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
@@ -64,32 +62,31 @@ def TL(source_data, target_data, features, eval_data, trial, optimizer_name, lr_
     else:
         day_index=None
         input_size = len(features)
+    
     #### SOURCE MODEL ########
-
-    source_model = LSTM(input_size, n_layers_source, n_layers_target, n_nodes_source, n_nodes_target, forecast_period, dropout, day_index).to(device)
+    source_model = LSTM(input_size,hidden_size,num_layers_source,num_layers_target, forecast_period, dropout, day_index).to(device)
     #Freeze the layers which are reserved for the target training
     
     
-    source_state_list, source_epoch = trainer(source_data, features,trial, optimizer_name, batch_size_source, 
-                                              lr=lr_source, model=source_model, scale=scale, eval_dataset=eval_data)
+    source_state_list, source_epoch = trainer(source_data, features,model=source_model, scale=scale, lr=lr_source)
 
     source_state_dict = source_state_list[source_epoch]
     
     #### TRANSFER MODEL #####
-    transfer_model = LSTM(input_size, n_layers_source, n_layers_target, n_nodes_source, n_nodes_target, forecast_period, dropout, day_index).to(device)
-    transfer_model.load_state_dict(source_state_dict)
-    if n_layers_source != 0:
-        for param in transfer_model.source_lstm.parameters():
-            param.requires_grad = False
-    
-    
 
-    target_state_list, target_epoch = trainer(target_data, features, trial, optimizer_name, batch_size_target,
-                                               lr=lr_target,scale=scale, model=transfer_model, eval_dataset=eval_data)
+    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
+    transfer_model.load_state_dict(source_state_dict)
+
+    for param in transfer_model.source_lstm.parameters():
+        param.requires_grad = False
+    
+    
+    target_state_list, target_epoch = trainer(target_data, features, scale=scale, model=transfer_model, lr=lr_target)
     target_state_dict = target_state_list[target_epoch]
 
     ##### TEST MODEL ######
-    eval_model = LSTM(input_size, n_layers_source, n_layers_target, n_nodes_source, n_nodes_target, forecast_period, dropout, day_index).to(device)
+
+    eval_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
     eval_model.load_state_dict(target_state_dict)
     y_truth, y_forecast = tester(eval_data, features, eval_model, scale=scale)
     
@@ -101,8 +98,8 @@ def TL(source_data, target_data, features, eval_data, trial, optimizer_name, lr_
     
     return target_state_dict, eval_obj
 
-def target(target_data, features, eval_data, trial, optimizer_name, lr_target,
-           n_layers_target, n_nodes_target, batch_size_target, scale=None): #, hyper_tuning, transposition,
+def target(target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
+    lr=1e-3
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
         input_size = len(features)-1
@@ -111,15 +108,15 @@ def target(target_data, features, eval_data, trial, optimizer_name, lr_target,
         
     #### TRANSFER MODEL #####
 
-    transfer_model = LSTM(input_size, 0, n_layers_target, 0, n_nodes_target, forecast_period, day_index).to(device)
+    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
 
     
-    target_state_list, target_epoch = trainer(target_data, features, trial, optimizer_name, batch_size_target, lr=lr_target,scale=scale, model=transfer_model, eval_dataset=eval_data)
+    target_state_list, target_epoch = trainer(target_data, features, scale=scale, model=transfer_model, lr=lr)
     target_state_dict = target_state_list[target_epoch]
 
     ##### TEST MODEL ######
 
-    eval_model = LSTM(input_size, 0, n_layers_target, 0, n_nodes_target, forecast_period, dropout, day_index).to(device)
+    eval_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
     eval_model.load_state_dict(target_state_dict)
     y_truth, y_forecast = tester(eval_data, features, eval_model, scale=scale)
     
@@ -140,24 +137,21 @@ def persistence(dataset):
     return eval_obj
 
 
-def trainer(dataset, features, trial, optimizer_name, batch_size=32, model=None,scale=None, lr=0.001, criterion=torch.nn.MSELoss(), eval_dataset=None):
+def trainer(dataset, features,  model=None,scale=None, lr=0.001, criterion=torch.nn.MSELoss(), trial=None, optimizer_name = None, batch_size=32):
 
 
-    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
+    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period)
     X_train, X_test, y_train, y_test = tensors.tensor_creation()
+    
     print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
-    if eval_dataset is not None:
-        tensors =  Tensorisation(eval_dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
-        X_eval, y_eval = tensors.evaluation_tensor_creation()
-
     # Initialize the trainer
-    training = Training(model, X_train, y_train, X_test, y_test, X_eval, y_eval, epochs, optimizer_name, trial, batch_size=batch_size, 
-                        learning_rate=lr, criterion=criterion)
-    # Train the model and return the trained parameters and the best iteration
-    state_dict_list, best_epoch = training.fit()
+    training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=lr, criterion=criterion, trial=trial, optimizer_name=optimizer_name, batch_size=batch_size)
 
-    return state_dict_list, best_epoch
+    # Train the model and return the trained parameters and the best iteration
+    avg_error = training.fit()
+
+    return avg_error
 
 def tester(dataset, features, model, scale=None): #Here plotting possibility??
     #In evaluation data the power should be removed and can then be compared
