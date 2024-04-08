@@ -4,33 +4,31 @@ import pandas as pd
 from Data.Featurisation import data_handeler
 from hyperparameters.hyperparameters import hyperparameters_source
 installation_id = "3437BD60"
-def objective(trial):
+def objective(trial, dataset, source_state_dict):
 
     # Generate the optimizers and hyperparameters
     optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
     lr = trial.suggest_loguniform("lr_source", 1e-5, 1e-1)
 
-    n_layers = trial.suggest_int("n_layers_source", 1, 7)
+    n_layers = trial.suggest_int("n_layers_source", 1, 5)
 
-    n_nodes = trial.suggest_int("n_units_source",4,1024)
+    n_nodes = trial.suggest_int("n_units_source",4,502)
 
     dropout = trial.suggest_uniform("dropout_l", 0.1, 0.5)
 
     batch_size = trial.suggest_int("Batch_size_source", 4,64)
     # Get data
 
-    source_dataset, target_dataset, eval_dataset = data_handeler("ceda", "ceda", "ceda", transform=True, month_source=False)
-    min = source_dataset.min(axis=0).to_dict()
-    max = source_dataset.max(axis=0).to_dict()
+    min = dataset.min(axis=0).to_dict()
+    max = dataset.max(axis=0).to_dict()
 
     
-    features = list(source_dataset.columns)
-    features = ['temperature_1_5m', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'PoA', 'P_24h_shift', "is_day"]
+    features = list(dataset.columns)
 
     # Make HP object
 
-    hp = hyperparameters_source(trial, optimizer_name, lr, n_layers, n_nodes, dropout, batch_size)
-    accuracy,_ = source(source_dataset, features, hp)
+    hp = hyperparameters_source(optimizer_name, lr, n_layers, n_nodes, dropout, batch_size, trial)
+    accuracy = source(dataset, features, hp)
 
 
 

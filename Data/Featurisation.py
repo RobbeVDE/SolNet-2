@@ -211,9 +211,9 @@ def data_handeler(source=None, target=None, eval=None, transform = True, month_s
     range_list = [eval_range, target_range,source_range]
     data = []
     for i, entry in enumerate(list):
-        if entry == "ceda":
+        if entry == "nwp":
             covariates = ceda
-        elif entry == "openmeteo":
+        elif entry == "era5":
             covariates = openmeteo
         elif entry is None:
             break

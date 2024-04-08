@@ -9,7 +9,7 @@ ES_option = False # Option to use early stopping
 import optuna
 import torch.optim as optim
 
-torch.manual_seed(0)
+torch.manual_seed(0) #More deterministic for reproducible results
 def save_model(model, name):
     """
     Saves the state dictionary using torch

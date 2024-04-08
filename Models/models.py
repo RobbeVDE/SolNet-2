@@ -35,25 +35,25 @@ def source(dataset, features, hp):
         day_index=None
         input_size = len(features)
     
-    source_model = LSTM(input_size,hp.n_nodes,hp.n_layers, forecast_period, dropout, day_index).to(device)
+    source_model = LSTM(input_size,hp.n_nodes,hp.n_layers, forecast_period, hp.dropout, day_index).to(device)
         
     avg_error, source_state_dict = trainer(dataset, features, model=source_model, hp=hp)
     if hp.trial is None:
         return avg_error, source_state_dict
-    else:
+    else: #Only concerned about accuracy when doing HP tuning
         return avg_error
     
-def target(dataset, features, scale, hp,source_state_dict=None):
+def target(dataset, features, hp):
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
         input_size = len(features)-1
     else:
         day_index=None
         input_size = len(features)
-    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
+    transfer_model = LSTM(input_size,hp.n_nodes, hp.n_layers, forecast_period, hp.dropout, day_index).to(device)
     
-    if source_state_dict is not None:
-        transfer_model.load_state_dict(source_state_dict)
+    if hp.source_state_dict is not None:
+        transfer_model.load_state_dict(hp.source_state_dict)
 
     avg_error = trainer(dataset, features, hp, transfer_model)
     
@@ -103,35 +103,6 @@ def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuni
     
     return target_state_dict, eval_obj
 
-def target(target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
-    lr=1e-3
-    if "is_day" in features:
-        day_index =  features.index("is_day") #BCS power also feature
-        input_size = len(features)-1
-    else:
-        input_size = len(features)
-        
-    #### TRANSFER MODEL #####
-
-    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
-
-    
-    target_state_list, target_epoch = trainer(target_data, features, scale=scale, model=transfer_model, lr=lr)
-    target_state_dict = target_state_list[target_epoch]
-
-    ##### TEST MODEL ######
-
-    eval_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
-    eval_model.load_state_dict(target_state_dict)
-    y_truth, y_forecast = tester(eval_data, features, eval_model, scale=scale)
-    
-    y_truth = y_truth.cpu().detach().flatten().numpy()
-    y_forecast = y_forecast.cpu().detach().flatten().numpy()
-
-    eval_obj = Evaluation(y_truth, y_forecast)
-
-    
-    return target_state_dict, eval_obj
 
 def persistence(dataset):
 
