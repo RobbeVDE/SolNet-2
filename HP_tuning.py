@@ -8,10 +8,10 @@ import pickle
 import optuna
 from functools import partial
 
-tuning_model = "source"  # Unique identifier of the study.
-dataset_name = "era5"
-transfo = True
-TL = True
+tuning_model = input("Tuning Model: Enter source or target \n")  # Unique identifier of the study.
+dataset_name = input("Dataset: Enter nwp or era5 \n")
+transfo = input("Use phys transfo: Enter True or False \n")
+TL = input("TL case: Enter True or False \n")
 source_state_dict = None
 source_data, target_data, _ = data_handeler(dataset_name, dataset_name, dataset_name, transfo)
 if tuning_model == "source":
