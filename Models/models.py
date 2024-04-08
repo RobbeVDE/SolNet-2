@@ -27,7 +27,7 @@ lr_target = 1e-5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def source(dataset, features, trial, optimizer_name, lr, n_layers, n_nodes, batch_size, dropout):
+def source(dataset, features, hp):
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
         input_size = len(features)-1
@@ -35,13 +35,15 @@ def source(dataset, features, trial, optimizer_name, lr, n_layers, n_nodes, batc
         day_index=None
         input_size = len(features)
     
-    source_model = LSTM(input_size,n_nodes,n_layers, forecast_period, dropout, day_index).to(device)
+    source_model = LSTM(input_size,hp.n_nodes,hp.n_layers, forecast_period, dropout, day_index).to(device)
         
-    avg_error = trainer(dataset, features, model=source_model, lr=lr, trial=trial, optimizer_name=optimizer_name, batch_size=batch_size)
-
-    return avg_error
+    avg_error, source_state_dict = trainer(dataset, features, model=source_model, hp=hp)
+    if hp.trial is None:
+        return avg_error, source_state_dict
+    else:
+        return avg_error
     
-def target(dataset, features, scale, source_state_dict=None):
+def target(dataset, features, scale, hp,source_state_dict=None):
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
         input_size = len(features)-1
@@ -52,7 +54,10 @@ def target(dataset, features, scale, source_state_dict=None):
     
     if source_state_dict is not None:
         transfer_model.load_state_dict(source_state_dict)
+
+    avg_error = trainer(dataset, features, hp, transfer_model)
     
+    return avg_error
 
 def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
     
@@ -137,7 +142,7 @@ def persistence(dataset):
     return eval_obj
 
 
-def trainer(dataset, features,  model=None,scale=None, lr=0.001, criterion=torch.nn.MSELoss(), trial=None, optimizer_name = None, batch_size=32):
+def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MSELoss()):
 
 
     tensors = Tensorisation(dataset, 'P', features, lags, forecast_period)
@@ -146,12 +151,13 @@ def trainer(dataset, features,  model=None,scale=None, lr=0.001, criterion=torch
     print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
     # Initialize the trainer
-    training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=lr, criterion=criterion, trial=trial, optimizer_name=optimizer_name, batch_size=batch_size)
+    training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=hp.lr, criterion=criterion, 
+                        trial=hp.trial, optimizer_name=hp.optimizer_name, batch_size=hp.batch_size)
 
     # Train the model and return the trained parameters and the best iteration
-    avg_error = training.fit()
+    avg_error, state_dict = training.fit()
 
-    return avg_error
+    return avg_error, state_dict
 
 def tester(dataset, features, model, scale=None): #Here plotting possibility??
     #In evaluation data the power should be removed and can then be compared
