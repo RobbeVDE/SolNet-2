@@ -126,7 +126,10 @@ def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MS
                         trial=hp.trial, optimizer_name=hp.optimizer_name, batch_size=hp.batch_size)
 
     # Train the model and return the trained parameters and the best iteration
-    avg_error, state_dict = training.fit()
+    if hp.trial is None:
+        avg_error, state_dict = training.fit()
+    else:
+        avg_error, state_dict = training.fit_cv()
 
     return avg_error, state_dict
 
