@@ -103,13 +103,13 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
 if __name__ == "__main__":
     manual_enter = True
     if manual_enter:
-        tuning_model = input("Tuning Model: Enter source or target \n")  # Unique identifier of the study.
-        dataset_name = input("Dataset: Enter nwp or era5 \n")
+        tuning_model = str(input("Tuning Model: Enter source or target \n"))  # Unique identifier of the study.
+        dataset_name = str(input("Dataset: Enter nwp or era5 \n"))
         transfo = input("Use phys transfo: Enter True or False \n")
 
         if transfo in ["True", "true"]:
             transfo = True
-        elif transfo in ["False, false"]:
+        elif transfo in ["False", "false"]:
             transfo = False
         else:
             raise KeyError
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         TL = bool(input("TL case: Enter True or False \n"))
         if TL in ["True", "true"]:
             TL = True
-        elif TL in ["False, false"]:
+        elif TL in ["False", "false"]:
             TL = False
         else:
             raise KeyError
