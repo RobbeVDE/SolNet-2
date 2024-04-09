@@ -30,6 +30,8 @@ def merge_slice(range, *args):
     merged = pd.DataFrame(index = range)
     for arg in args:
         merged = pd.merge(merged, data_slicer(arg, range), right_index=True, left_index=True, how='inner')
+    if ~isinstance(merged.index, pd.DatetimeIndex):
+        merged.index = pd.to_datetime(merged.index, utc=True)
     return merged
     
 def target_renamer(dataset, original_name):
