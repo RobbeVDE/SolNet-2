@@ -105,7 +105,7 @@ if __name__ == "__main__":
     if manual_enter:
         tuning_model = str(input("Tuning Model: Enter source or target \n"))  # Unique identifier of the study.
         dataset_name = str(input("Dataset: Enter nwp or era5 \n"))
-        transfo = input("Use phys transfo: Enter True or False \n")
+        transfo = str(input("Use phys transfo: Enter True or False \n"))
 
         if transfo in ["True", "true"]:
             transfo = True
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         else:
             raise KeyError
 
-        TL = bool(input("TL case: Enter True or False \n"))
+        TL = str(input("TL case: Enter True or False \n"))
         if TL in ["True", "true"]:
             TL = True
         elif TL in ["False", "false"]:
