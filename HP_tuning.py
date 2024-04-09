@@ -105,8 +105,22 @@ if __name__ == "__main__":
     if manual_enter:
         tuning_model = input("Tuning Model: Enter source or target \n")  # Unique identifier of the study.
         dataset_name = input("Dataset: Enter nwp or era5 \n")
-        transfo = bool(input("Use phys transfo: Enter True or False \n"))
+        transfo = input("Use phys transfo: Enter True or False \n")
+
+        if transfo in ["True", "true"]:
+            transfo = True
+        elif transfo in ["False, false"]:
+            transfo = False
+        else:
+            raise KeyError
+
         TL = bool(input("TL case: Enter True or False \n"))
+        if TL in ["True", "true"]:
+            TL = True
+        elif TL in ["False, false"]:
+            TL = False
+        else:
+            raise KeyError
         step = int(input("Select step in optimization: \n 1: Initial HP \n 2: Feature Selection \n 3: Complete HP \n"))
     else:
         tuning_model = "source"
