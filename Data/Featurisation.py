@@ -72,6 +72,7 @@ class Featurisation:
         :return: the data list but with chosen cyclic features included
         """
         for i in range(len(self.data)):
+            print(self.data[i], self.data[i].index.dtype)
             if daily is True:
                 self.data[i]['hour_sin'] = np.sin(2 * np.pi * self.data[i].index.hour / 24)
                 self.data[i]['hour_cos'] = np.cos(2 * np.pi * self.data[i].index.hour / 24)
