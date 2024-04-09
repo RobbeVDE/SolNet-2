@@ -1,6 +1,8 @@
 from optuna.trial import TrialState
 from optuna.samplers import TPESampler
+from hyperparameters.hyperparameters import hyperparameters_source, hyperparameters_target
 from Data.Featurisation import data_handeler
+from scale import Scale
 import torch
 import logging
 import sys
@@ -9,7 +11,7 @@ import optuna
 from functools import partial
 
 
-def HP_tuning(tuning_model, dataset_name, transfo, TL):
+def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
     source_state_dict = None
     source_data, target_data, _ = data_handeler(dataset_name, dataset_name, dataset_name, transfo)
     if tuning_model == "source":
@@ -21,21 +23,28 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL):
         if TL:
             source_state_dict = torch.load("Models/source")
 
-    objective = partial(objective,  dataset = dataset, source_state_dict = source_state_dict)
+    scale = Scale() #Load right scale
+    scale.load(dataset_name)
+
+    objective = partial(objective,  dataset = dataset, source_state_dict = source_state_dict, scale=scale, step=step)
 
     optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 
     storage_name = f"sqlite:///HP_{tuning_model}.db"
-    study_name = f"{dataset_name} | transfo: {transfo} | TL: {TL}"
+    study_name = f"{dataset_name} | transfo: {transfo} | TL: {TL} | Step: {step}"
     try:
-        restored_sampler = pickle.load(open(f"hyperparameters/samplers/sampler_{tuning_model}_{dataset_name}_{transfo}.pkl", "rb")) 
+        sampler = pickle.load(open(f"hyperparameters/samplers/sampler_{tuning_model}_{dataset_name}_{transfo}_{TL}_{step}.pkl", "rb")) 
     except: #If there is no sampler present, make a new one
         sampler = TPESampler(seed=10)  # Make the sampler behave in a deterministic way.
 
     study = optuna.create_study(study_name=study_name, storage=storage_name, direction="minimize", 
                                 load_if_exists=True, sampler=sampler)
     try:
-        study.optimize(objective, n_trials=100)
+        if step == 1: #Less trials for fist estimate at HP bcs not that important yet
+            n_trials = 30
+        else:
+            n_trials = 100
+        study.optimize(objective, n_trials=n_trials)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
 
@@ -50,15 +59,59 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL):
         print("  Value: ", trial.value)
 
         print("  Params: ")
-        for key, value in trial.params.items():
-            print("    {}: {}".format(key, value))
+        if step==2:
+            final_features = []
+            for key, value in trial.params.items():
+                print("    {}: {}".format(key, value))
+                if value:
+                    final_features.append(key)
+
+            with open(f"hyperparameters/HP_{tuning_model}.pkl", 'wb') as f:
+                pickle.dump(final_features, f)
+            
+        else:
+            for key, value in trial.params.items():
+                print("    {}: {}".format(key, value))
+                if "n_layer" in key:
+                    n_layers = value
+                elif "n_units" in key:
+                    n_units = value
+                elif "lr" in key:
+                    lr = value
+                elif "dropout" in key:
+                    dropout = value
+                elif "Batch_size" in key:
+                    batch_size = value
+                elif "optimizer" in key:
+                    optimizer = value
+                else:
+                    print("This value not stored in hp object")
+                if tuning_model == "source":
+                    hp = hyperparameters_source(optimizer, lr, n_layers, n_units, dropout, batch_size)
+                else:
+                    hp_source = hyperparameters_source()
+                    hp_source.load(3) #Load hyperparam source for n_layers and stuf
+                    hp = hyperparameters_target(hp_source.optimizer_name, lr, hp_source.n_layers, hp_source.n_nodes,
+                                                dropout, batch_size) #Only parameters you optimized
+                hp.save(step)
+
+            
     except KeyboardInterrupt: #If optimization process gets interrupted the sampler is saved for next time 
-        with open(f"hyperparameters/samplers/sampler_{tuning_model}_{dataset_name}_{transfo}_{TL}.pkl", "wb") as fout: 
+        with open(f"hyperparameters/samplers/sampler_{tuning_model}_{dataset_name}_{transfo}_{TL}_{step}.pkl", "wb") as fout: 
             pickle.dump(study.sampler, fout)
 
 if __name__ == "__main__":
-    tuning_model = input("Tuning Model: Enter source or target \n")  # Unique identifier of the study.
-    dataset_name = input("Dataset: Enter nwp or era5 \n")
-    transfo = input("Use phys transfo: Enter True or False \n")
-    TL = input("TL case: Enter True or False \n")
-    HP_tuning(tuning_model, dataset_name, transfo, TL)
+    manual_enter = True
+    if manual_enter:
+        tuning_model = input("Tuning Model: Enter source or target \n")  # Unique identifier of the study.
+        dataset_name = input("Dataset: Enter nwp or era5 \n")
+        transfo = bool(input("Use phys transfo: Enter True or False \n"))
+        TL = bool(input("TL case: Enter True or False \n"))
+        step = int(input("Select step in optimization: \n 1: Initial HP \n 2: Feature Selection \n 3: Complete HP \n"))
+    else:
+        tuning_model = "source"
+        dataset_name = "nwp"
+        transfo = False
+        TL = True
+        step = 1
+    HP_tuning(tuning_model, dataset_name, transfo, TL, step)

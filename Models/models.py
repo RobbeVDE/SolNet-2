@@ -27,7 +27,7 @@ lr_target = 1e-5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def source(dataset, features, hp):
+def source(dataset, features, hp, scale):
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
         input_size = len(features)-1
@@ -37,13 +37,13 @@ def source(dataset, features, hp):
     
     source_model = LSTM(input_size,hp.n_nodes,hp.n_layers, forecast_period, hp.dropout, day_index).to(device)
         
-    avg_error, source_state_dict = trainer(dataset, features, model=source_model, hp=hp)
+    avg_error, source_state_dict = trainer(dataset, features, model=source_model, hp=hp, scale=scale)
     if hp.trial is None:
         return avg_error, source_state_dict
     else: #Only concerned about accuracy when doing HP tuning
         return avg_error
     
-def target(dataset, features, hp):
+def target(dataset, features, hp, scale):
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
         input_size = len(features)-1
@@ -54,10 +54,12 @@ def target(dataset, features, hp):
     
     if hp.source_state_dict is not None:
         transfer_model.load_state_dict(hp.source_state_dict)
-
-    avg_error = trainer(dataset, features, hp, transfer_model)
     
-    return avg_error
+    avg_error, target_state_dict = trainer(dataset, features, hp, transfer_model, scale=scale)
+    if hp.trial is None:
+        return avg_error, target_state_dict
+    else:
+        return avg_error
 
 def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
     
@@ -116,7 +118,8 @@ def persistence(dataset):
 def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MSELoss()):
 
 
-    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period)
+    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, 
+                            train_test_split=scale.split, domain_min=scale.min,domain_max=scale.max)
     X_train, X_test, y_train, y_test = tensors.tensor_creation()
     
     print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
@@ -135,13 +138,13 @@ def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MS
 
 def tester(dataset, features, model, scale=None): #Here plotting possibility??
     #In evaluation data the power should be removed and can then be compared
-    tensor = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale[0], domain_max=scale[1])
+    tensor = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale.min, domain_max=scale.max)
     X, y_truth = tensor.evaluation_tensor_creation()
     model.eval()
     with torch.no_grad():
         y_forecast = model(X)
-    y_truth = unscale(y_truth, scale[1], scale[0])
-    y_forecast = unscale(y_forecast, scale[1], scale[0])
+    y_truth = unscale(y_truth, scale.max, scale.min)
+    y_forecast = unscale(y_forecast, scale.max, scale.min)
     return y_truth, y_forecast
 
 

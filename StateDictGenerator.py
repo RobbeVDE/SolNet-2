@@ -1,20 +1,27 @@
 from Models.models import source
 from Data.Featurisation import data_handeler
+from hyperparameters.hyperparameters import hyperparameters_source
+from scale import Scale
 import torch
 
 #### Model parameters
-batch_size = 5
-lr = 0.00138
-dropout= 0.364
-n_layers = 1
-n_nodes = 316
-optimizer_name = "Adam"
+batch_size = 4
+lr = 1.75e-3
+dropout= 0.11
+n_layers = 2
+n_nodes = 190
+optimizer_name = "RMSprop"
 
+dataset_name = "nwp"
+source_dataset, _, _ = data_handeler("nwp", "nwp", "nwp", False)
 
-source_dataset, _, _ = data_handeler("ceda", "ceda", "ceda")
+features= list(source_dataset.columns)
+features.remove('P')
+scale = Scale()
+scale.load("nwp")
 
-features = features = ['temperature_1_5m', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'PoA', 'P_24h_shift', "is_day"]
+hp = hyperparameters_source(optimizer_name, lr, n_layers, n_nodes, dropout, batch_size)
 
-accuracy, state_dict = source(source_dataset, features, optimizer_name, lr, n_layers, n_nodes, batch_size, dropout)
+accuracy, state_dict = source(source_dataset, features, hp, scale)
 
 torch.save(state_dict, "Models/source")

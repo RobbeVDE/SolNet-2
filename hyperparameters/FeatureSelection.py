@@ -10,17 +10,19 @@ def feature_selection(trial, features):
     """
     sel_features = []
     prev_sincos = False
-    for i,feat in enumerate(features):
-        sel = trial.suggest_catagorical(feat,[True, False])
-        if ~prev_sincos:
-            sel_features.append(sel)
-        else:
-            prev_sincos = False
-        
+    for feat in features:
         if ("_sin" in feat) or ("_cos" in feat):
+            if not prev_sincos:
+                sel = trial.suggest_categorical(feat,[True, False])
+                sel_features.append(sel)
+                sel_features.append(sel)
+                prev_sincos = True
+            else:
+                prev_sincos = False
+        
+        else:
+            sel = trial.suggest_categorical(feat,[True, False])
             sel_features.append(sel)
-            prev_sincos = True
-
     
     return sel_features
 

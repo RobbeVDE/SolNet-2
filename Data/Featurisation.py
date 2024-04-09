@@ -74,7 +74,6 @@ class Featurisation:
         :return: the data list but with chosen cyclic features included
         """
         for i in range(len(self.data)):
-            print(self.data[i].index)
             if daily is True:
                 self.data[i]['hour_sin'] = np.sin(2 * np.pi * self.data[i].index.hour / 24)
                 self.data[i]['hour_cos'] = np.cos(2 * np.pi * self.data[i].index.hour / 24)
@@ -251,7 +250,6 @@ def data_handeler(source=None, target=None, eval=None, transform = True, month_s
     #Add extra variates
     data = Featurisation(data)
     data.data = data.cyclic_features()
-    data.data = data.add_shift('P')
     data.data = data.cyclic_angle('wind_direction_10m')
     if transform:
         data.data = data.PoA(latitude, longitude, tilt, azimuth)
@@ -259,6 +257,8 @@ def data_handeler(source=None, target=None, eval=None, transform = True, month_s
         inv_list = [False, False, True] #Pre-processing only allowed for 
         data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
         data.data = data.inverter_limit(2500, inv_list)
+    data.data = data.add_shift('P') #Shift after inv_limit, otherwise discrepancy
+
 
     if source is not None:
         source_dataset = data.data[2]
