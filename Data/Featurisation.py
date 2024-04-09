@@ -182,11 +182,13 @@ def data_handeler(source=None, target=None, eval=None, transform = True, month_s
     #Data intakeer
     if IN_COLAB:
         openmeteo = pd.read_csv("Data/openmeteo.csv")
-
+        openmeteo.index = pd.to_datetime(openmeteo.index)
         pvgis = pd.read_csv('Data/PVGIS.csv')
-
+        pvgis.index = pd.to_datetime(pvgis.index)
         ceda = pd.read_csv("CEDA_dataNL.csv")
+        ceda.index = pd.to_datetime(ceda.index)
         is_day = pd.read_csv("Data/is_day.csv")
+        is_day.index = pd.to_datetime(is_day.index)
     else:
         openmeteo = pd.read_pickle("Data/openmeteo.pickle")
 
