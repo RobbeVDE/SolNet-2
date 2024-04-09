@@ -61,3 +61,4 @@ if __name__ == "__main__":
     dataset_name = input("Dataset: Enter nwp or era5 \n")
     transfo = input("Use phys transfo: Enter True or False \n")
     TL = input("TL case: Enter True or False \n")
+    HP_tuning(tuning_model, dataset_name, transfo, TL)

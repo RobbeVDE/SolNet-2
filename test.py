@@ -1,8 +1,6 @@
-from Data.Featurisation import Featurisation, data_handeler
+import pandas as pd
 
-source_dataset, target_dataset, eval_dataset = data_handeler("ceda", "ceda", "ceda", transform=True, month_source=False)
+dataset = pd.read_pickle("Data/is_day.pickle")
+dataset.to_csv("Data/is_day.csv", index_label=False)
 
-print(source_dataset)
-print(target_dataset)
-print(eval_dataset)
 

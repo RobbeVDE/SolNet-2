@@ -169,13 +169,31 @@ def data_handeler(source=None, target=None, eval=None, transform = True, month_s
     target_range = pd.date_range("2020-08-01", "2020-08-31 23:00", freq='h', tz="UTC")
     eval_range = pd.date_range("2020-09-01", "2021-07-31 23:00", tz="UTC", freq='h')
 
+    #Check if running in Google Colab
+    try:
+        import google.colab
+        IN_COLAB = True
+        print("In Google Colab environment: Using .csv files")
+    except:
+        IN_COLAB = False
+        print("Not in Colab environment: Using .pickle files")
+    
+    
     #Data intakeer
-    openmeteo = pd.read_pickle("Data/openmeteo.pickle")
+    if IN_COLAB:
+        openmeteo = pd.read_pickle("Data/openmeteo.csv")
 
-    pvgis = pd.read_pickle('Data/PVGIS.pickle')
+        pvgis = pd.read_pickle('Data/PVGIS.csv')
 
-    ceda = pd.read_pickle("CEDA_dataNL.pickle")
-    is_day = pd.read_pickle("Data/is_day.pickle")
+        ceda = pd.read_pickle("CEDA_dataNL.csv")
+        is_day = pd.read_pickle("Data/is_day.csv")
+    else:
+        openmeteo = pd.read_pickle("Data/openmeteo.pickle")
+
+        pvgis = pd.read_pickle('Data/PVGIS.pickle')
+
+        ceda = pd.read_pickle("CEDA_dataNL.pickle")
+        is_day = pd.read_pickle("Data/is_day.pickle")
 
     meteo2CEDA = {'temperature_2m' :'temperature_1_5m', 
                 "relative_humidity_2m":"relative_humidity_1_5m", 
