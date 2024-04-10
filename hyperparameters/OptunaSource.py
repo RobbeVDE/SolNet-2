@@ -18,7 +18,7 @@ def objective(trial, dataset, source_state_dict, scale, step):
     
     if step == 2:
         sel_features = feature_selection(trial, features)
-        list(compress(features, sel_features))
+        features = list(compress(features, sel_features))
         hp = hyperparameters_source()
         hp.trial = trial
         hp.load(1)

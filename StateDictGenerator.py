@@ -15,8 +15,8 @@ optimizer_name = "RMSprop"
 dataset_name = "nwp"
 source_dataset, _, _ = data_handeler("nwp", "nwp", "nwp", False)
 
-features= list(source_dataset.columns)
-features.remove('P')
+features= list(('temperature_1_5m', "total_cloud_amount"))
+#features.remove('P')
 scale = Scale()
 scale.load("nwp")
 
