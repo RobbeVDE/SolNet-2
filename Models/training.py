@@ -62,7 +62,8 @@ class Training:
         self.trial = trial
         self.model = model
         self.criterion = criterion
-        self.optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=learning_rate)
+        self.optimizer_name = optimizer_name
+        self.lr = learning_rate 
         self.epochs = epochs
         
 
@@ -74,7 +75,9 @@ class Training:
         avg_train_error = []
         avg_test_error = []
         state_dict_list = []
-            
+        
+        optimizer = getattr(optim, self.optimizer_name)(self.model.parameters(), lr=self.lr)
+
         early_stopper = EarlyStopper(patience=5, min_delta=0.005)
         for epoch in range(self.epochs):
             num_train_batches = 0
@@ -91,9 +94,9 @@ class Training:
                 total_loss += float(loss)
                 num_train_batches += 1
 
-                self.optimizer.zero_grad()
+                optimizer.zero_grad()
                 loss.backward()
-                self.optimizer.step()
+                optimizer.step()
 
             self.model.eval()
 
@@ -140,6 +143,9 @@ class Training:
             avg_train_error = []
             avg_test_error = []
             state_dict_list = []
+
+            optimizer = getattr(optim, self.optimizer_name)(self.model.parameters(), lr=self.lr)
+
             print(f'FOLD {fold}')
             print('-----------------------')
 
@@ -164,9 +170,9 @@ class Training:
                     total_loss += float(loss)
                     num_train_batches += 1
 
-                    self.optimizer.zero_grad()
+                    optimizer.zero_grad()
                     loss.backward()
-                    self.optimizer.step()
+                    optimizer.step()
 
                 self.model.eval()
 

@@ -10,6 +10,7 @@ total_df.index = pd.to_datetime(total_df.index, utc=True)
 total_df["wind_speed_10m"] = np.sqrt(total_df["wind_u_10m"] **2+ total_df["wind_v_10m"] **2)
 total_df["wind_direction_10m"] = np.arctan2(total_df["wind_v_10m"], total_df["wind_u_10m"]) *180/np.pi  #Convert from [-pi, pi] to [0,360]
 total_df.drop(columns=['wind_u_10m', 'wind_v_10m'], inplace=True)
+total_df['pressure_MSL'] = total_df['pressure_MSL']/100
 
 #2016-07-14 has empty columns but didn't give an error so fill up with NaN values here, keep it general if more days missing
 missing_days = [pd.to_datetime("2016-07-14", utc=True)]
@@ -53,10 +54,15 @@ times = total_df.index
 solar_pos = site.get_solarposition(times)
 zenith = np.deg2rad(solar_pos['apparent_zenith'])
 
-dir_surf_irrad = total_df["direct_surface_SW_flux"]
+# dir_surf_irrad = pd.DataFrame(total_df["direct_surface_SW_flux"])
 
+# dir_surf_irrad["zenith"] = zenith
+# dir_surf_irrad["direct_surface_SW_flux"] = dir_surf_irrad["direct_surface_SW_flux"]/np.cos(dir_surf_irrad["zenith"])
 
+# dir_surf_irrad.loc[(dir_surf_irrad.zenith >= np.deg2rad(85)), 'direct_surface_SW_flux'] = 0
 
+# total_df["direct_surface_SW_flux"] = dir_surf_irrad['direct_surface_SW_flux']
 
-total_df["direct_surface_SW_flux"] = dir_surf_irrad.div(np.cos(zenith, dtype='float64'), axis=0, fill_value=0)
+total_df["direct_surface_SW_flux"] = total_df["direct_surface_SW_flux"].div(np.cos(zenith), axis=0, fill_value=0)
+
 total_df.to_pickle("CEDA_dataNL.pickle")
