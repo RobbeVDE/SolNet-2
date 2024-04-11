@@ -133,6 +133,8 @@ class Training:
         plt.plot(avg_test_error, label='test error ' + str(self.months) + ' months')
         plt.legend()
 
+        plt.show()
+
         return min(avg_test_error), state_dict_list[argmin_test]
 
     def fit_cv(self):
@@ -217,6 +219,7 @@ class Training:
             plt.plot(avg_train_error, label='train error ' + str(self.months) + ' months')
             plt.plot(avg_test_error, label='test error ' + str(self.months) + ' months')
             plt.legend()
+
         
         
         avg_error = np.mean(fold_avg_test_loss)

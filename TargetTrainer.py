@@ -6,14 +6,14 @@ import torch
 
 #### Model parameters
 batch_size = 18
-lr = 2.69e-3
+lr = 2.69e-4
 dropout= 0.139
-n_layers = 2
-n_nodes = 190
+n_layers = 1
+n_nodes = 40
 optimizer_name = "Adam"
 
 dataset_name = "nwp"
-source_dataset, target_dataset, _ = data_handeler("nwp", "nwp", "nwp", False)
+source_dataset, target_dataset, _ = data_handeler("nwp", "nwp", "nwp", True)
 
 features= list(source_dataset.columns)
 features.remove('P')

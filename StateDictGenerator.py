@@ -9,14 +9,14 @@ batch_size = 4
 lr = 1.75e-3
 dropout= 0.11
 n_layers = 2
-n_nodes = 190
-optimizer_name = "RMSprop"
+n_nodes = 100
+optimizer_name = "Adam"
 
 dataset_name = "nwp"
 source_dataset, _, _ = data_handeler("nwp", "nwp", "nwp", False)
 
-features= list(('temperature_1_5m', "total_cloud_amount"))
-#features.remove('P')
+features= list(source_dataset.columns)
+features.remove('P')
 scale = Scale()
 scale.load("nwp")
 

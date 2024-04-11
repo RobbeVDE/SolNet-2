@@ -8,10 +8,10 @@ import torch
 forecast_period = 24
 #### Model parameters
 batch_size = 18
-lr = 2.69e-3
+lr = 2.69e-4
 dropout= 0.139
-n_layers = 2
-n_nodes = 190
+n_layers = 1
+n_nodes = 30
 optimizer_name = "Adam"
 
 dataset_name = "nwp"
