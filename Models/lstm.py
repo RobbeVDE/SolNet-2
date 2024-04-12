@@ -28,7 +28,7 @@ class LSTM(nn.Module):
         self.day_index = day_index
 
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, dropout=dropout, batch_first=True)
-        self.linear = nn.Linear(in_features=hidden_size, out_features=1)
+        self.linear = nn.Linear(in_features=hidden_size, out_features=output_size)
 
     def forward(self, input):
         """
@@ -51,12 +51,11 @@ class LSTM(nn.Module):
         
         hidden, _ = self.lstm(input_new, None)
 
-        # if hidden.dim() == 2:
-        #     hidden = hidden[-1, :]
-        # else:
-        #     hidden = hidden[:, -1, :]
+        if hidden.dim() == 2:
+            hidden = hidden[-1, :]
+        else:
+            hidden = hidden[:, -1, :]
         output = self.linear(hidden)
-        output = output.squeeze()
         if self.day_index is not None:
             output[night_mask] = 0
             #output[output<0] = 0 # Other physical post-processing, we know power cannot be below zero

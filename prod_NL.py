@@ -1,6 +1,6 @@
 import pandas as pd
 
-from main import target_renamer
+from Data.Featurisation import target_renamer
 
 
 installation_id = "3437BD60"
@@ -17,4 +17,5 @@ power = prodNL.loc[installation_id]
 power = target_renamer(power, 'watt')
 power = power.resample('h').sum()/4
 power = power.tz_localize('UTC')
+print(power)
 power.to_pickle("Data/NL_power.pickle")

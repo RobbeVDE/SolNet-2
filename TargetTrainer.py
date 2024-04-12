@@ -5,11 +5,11 @@ from scale import Scale
 import torch
 
 #### Model parameters
-batch_size = 18
-lr = 2.69e-4
+batch_size = 4
+lr = 2.69e-5
 dropout= 0.139
-n_layers = 1
-n_nodes = 40
+n_layers = 2
+n_nodes = 100
 optimizer_name = "Adam"
 
 dataset_name = "nwp"

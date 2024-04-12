@@ -33,9 +33,10 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
     storage_name = f"sqlite:///HP_{tuning_model}.db"
     study_name = f"{dataset_name} | transfo: {transfo} | TL: {TL} | Step: {step}"
     try:
-        sampler = pickle.load(open(f"hyperparameters/samplers/sampler_{tuning_model}_{dataset_name}_{transfo}_{TL}_{step}.pkl", "rb")) 
+        sampler = pickle.load(open(f"hyperparameters/samplers/sampler_{tuning_model}_{dataset_name}_{transfo}_{TL}_{step}.pkl", "rb"))
+        print("Using existing sampler.") 
     except: #If there is no sampler present, make a new one
-        sampler = TPESampler(seed=10)  # Make the sampler behave in a deterministic way.
+        sampler = TPESampler(seed=10)  # Make the sampler behave in a deterministic way. For reproducibility.
 
     study = optuna.create_study(study_name=study_name, storage=storage_name, direction="minimize", 
                                 load_if_exists=True, sampler=sampler)
@@ -86,19 +87,20 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
                     optimizer = value
                 else:
                     print("This value not stored in hp object")
-                if tuning_model == "source":
-                    hp = hyperparameters_source(optimizer, lr, n_layers, n_units, dropout, batch_size)
-                else:
-                    hp_source = hyperparameters_source()
-                    hp_source.load(3) #Load hyperparam source for n_layers and stuf
-                    hp = hyperparameters_target(hp_source.optimizer_name, lr, hp_source.n_layers, hp_source.n_nodes,
-                                                dropout, batch_size) #Only parameters you optimized
-                hp.save(step)
+            if tuning_model == "source":
+                hp = hyperparameters_source(optimizer, lr, n_layers, n_units, dropout, batch_size)
+            else:
+                hp_source = hyperparameters_source()
+                hp_source.load(3) #Load hyperparam source for n_layers and stuf
+                hp = hyperparameters_target(hp_source.optimizer_name, lr, hp_source.n_layers, hp_source.n_nodes,
+                                            dropout, batch_size) #Only parameters you optimized
+            hp.save(step)
 
             
     except KeyboardInterrupt: #If optimization process gets interrupted the sampler is saved for next time 
         with open(f"hyperparameters/samplers/sampler_{tuning_model}_{dataset_name}_{transfo}_{TL}_{step}.pkl", "wb") as fout: 
             pickle.dump(study.sampler, fout)
+        print("Sampler saved succesfully.")
 
 if __name__ == "__main__":
     manual_enter = True

@@ -10,12 +10,12 @@ forecast_period = 24
 batch_size = 18
 lr = 2.69e-4
 dropout= 0.139
-n_layers = 1
-n_nodes = 30
+n_layers = 2
+n_nodes = 100
 optimizer_name = "Adam"
 
 dataset_name = "nwp"
-source_dataset, target_dataset, eval_dataset = data_handeler("nwp", "nwp", "nwp", False)
+source_dataset, target_dataset, eval_dataset = data_handeler("nwp", "nwp", "nwp", True)
 
 
 features= list(source_dataset.columns)
@@ -44,7 +44,7 @@ print(eval_obj.metrics())
 plt.figure()
 
 day = 1
-plt.plot(y_forecast[(24*day):(24*day)+71],  label="Forecast")
-plt.plot(y_truth[(24*day):(24*day)+71], label="Truth")
+plt.plot(y_forecast,  label="Forecast")
+plt.plot(y_truth, label="Truth")
 plt.legend()
 plt.show()

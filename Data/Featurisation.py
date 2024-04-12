@@ -251,9 +251,10 @@ def data_handeler(source=None, target=None, eval=None, transform = True, month_s
     data = Featurisation(data)
     data.data = data.cyclic_features()
     data.data = data.cyclic_angle('wind_direction_10m')
+    outlier_list = [False, True, True] #No outliers removed for evaluation as this is not
+    data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
     if transform:
-        data.data = data.PoA(latitude, longitude, tilt, azimuth)
-        outlier_list = [False, True, True] #No outliers removed for evaluation as this is not 
+        data.data = data.PoA(latitude, longitude, tilt, azimuth) 
         inv_list = [False, False, True] #Pre-processing only allowed for 
         data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
         data.data = data.inverter_limit(2500, inv_list)
