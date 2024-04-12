@@ -140,7 +140,7 @@ class Training:
     def fit_cv(self):
         fold_avg_test_loss = []
         best_loss = np.inf
-        kfold = KFold()
+        kfold = KFold(n_splits=3)
         for fold, (train_ids, test_ids) in enumerate(kfold.split(self.total_data)):
             avg_train_error = []
             avg_test_error = []
