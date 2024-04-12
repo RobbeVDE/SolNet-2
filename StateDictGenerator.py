@@ -5,12 +5,6 @@ from scale import Scale
 import torch
 
 #### Model parameters
-batch_size = 4
-lr = 1.75e-3
-dropout= 0.11
-n_layers = 2
-n_nodes = 100
-optimizer_name = "Adam"
 
 dataset_name = "nwp"
 source_dataset, _, _ = data_handeler("nwp", "nwp", "nwp", True)
@@ -21,7 +15,8 @@ features.remove('P')
 scale = Scale()
 scale.load("nwp")
 
-hp = hyperparameters_source(optimizer_name, lr, n_layers, n_nodes, dropout, batch_size)
+hp = hyperparameters_source()
+hp.load(3)
 
 accuracy, state_dict = source(source_dataset, features, hp, scale)
 

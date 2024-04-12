@@ -142,6 +142,8 @@ class Training:
         best_loss = np.inf
         kfold = KFold(n_splits=3)
         for fold, (train_ids, test_ids) in enumerate(kfold.split(self.total_data)):
+            print(train_ids)
+            print(test_ids)
             avg_train_error = []
             avg_test_error = []
             state_dict_list = []

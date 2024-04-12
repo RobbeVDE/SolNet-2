@@ -29,7 +29,7 @@ def merge_slice(range, *args):
 
     merged = pd.DataFrame(index = range)
     for arg in args:
-        merged = pd.merge(merged, data_slicer(arg, range), right_index=True, left_index=True, how='inner')
+        merged = pd.merge(merged, data_slicer(arg, range), right_index=True, left_index=True, how='outer')
     if ~isinstance(merged.index, pd.DatetimeIndex):
         merged.index = pd.to_datetime(merged.index, utc=True)
     return merged
@@ -259,6 +259,10 @@ def data_handeler(source=None, target=None, eval=None, transform = True, month_s
         data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
         data.data = data.inverter_limit(2500, inv_list)
     data.data = data.add_shift('P') #Shift after inv_limit, otherwise discrepancy
+
+    for i in range(len(data.data)): #We added this bcs now we merge on outer of indices but lot of missing day data, now we want to have accurate regression so we do like this
+        data.data[i] = data.data[i].dropna()
+    
 
 
     if source is not None:

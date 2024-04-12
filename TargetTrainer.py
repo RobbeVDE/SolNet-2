@@ -22,7 +22,9 @@ scale.load("nwp")
 
 source_state_dict = torch.load("Models/source")
 
-hp = hyperparameters_target(optimizer_name, lr, n_layers, n_nodes, dropout, batch_size, source_state_dict=source_state_dict)
+hp = hyperparameters_target()
+hp.load(3)
+hp.source_state_dict = source_state_dict
 
 accuracy, state_dict = target(target_dataset, features, hp, scale)
 
