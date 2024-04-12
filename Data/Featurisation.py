@@ -164,12 +164,12 @@ def data_handeler(source=None, target=None, eval=None, transform = True, month_s
     """
     #Month ranges, maybe option to specify this with function
     if month_source:   
-        source_range = pd.date_range("2019-08-01", "2019-08-31 23:00", freq='h', tz="UTC")
+        source_range = pd.date_range("2018-08-01", "2018-08-31 23:00", freq='h', tz="UTC")
     else:
-        source_range = pd.date_range("2016-05-01","2020-07-31 23:00", freq='h', tz="UTC")
+        source_range = pd.date_range("2016-05-01","2019-04-30 23:00", freq='h', tz="UTC")
 
-    target_range = pd.date_range("2020-08-01", "2020-08-31 23:00", freq='h', tz="UTC")
-    eval_range = pd.date_range("2020-09-01", "2021-07-31 23:00", tz="UTC", freq='h')
+    target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC")
+    eval_range = pd.date_range("2020-05-01", "2021-04-30 23:00", tz="UTC", freq='h')
 
     #Check if running in Google Colab
     try:
