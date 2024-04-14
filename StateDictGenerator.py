@@ -3,15 +3,14 @@ from Data.Featurisation import data_handeler
 from hyperparameters.hyperparameters import hyperparameters_source
 from scale import Scale
 import torch
-
+import pickle
 #### Model parameters
 
 dataset_name = "nwp"
-source_dataset, _, _ = data_handeler("nwp", "nwp", "nwp", True)
-features = ['temperature_1_5m', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'P_24h_shift']
+source_dataset, _, _ = data_handeler("nwp", "nwp", "nwp", False)
+with open("hyperparameters/HP_source.pkl", 'rb') as f:
+            features = pickle.load(f)
 
-features= list(source_dataset.columns)
-features.remove('P')
 scale = Scale()
 scale.load("nwp")
 

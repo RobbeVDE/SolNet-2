@@ -3,7 +3,7 @@ from Data.Featurisation import data_handeler
 from hyperparameters.hyperparameters import hyperparameters_target
 from scale import Scale
 import torch
-
+import pickle
 #### Model parameters
 batch_size = 4
 lr = 2.69e-5
@@ -15,8 +15,8 @@ optimizer_name = "Adam"
 dataset_name = "nwp"
 source_dataset, target_dataset, _ = data_handeler("nwp", "nwp", "nwp", True)
 
-features= list(source_dataset.columns)
-features.remove('P')
+with open("hyperparamaters/HP_source.pkl", rb) as f:
+    features = pickle.load(f)
 scale = Scale()
 scale.load("nwp")
 

@@ -33,12 +33,12 @@ class hyperparameters_source():
 
 class hyperparameters_target():
     def __init__(self,
-                 optimizer_name,
-                 lr,
-                 n_layers,
-                 n_nodes,
-                 dropout,
-                 batch_size,
+                 optimizer_name=None,
+                 lr= None,
+                 n_layers= None,
+                 n_nodes= None,
+                 dropout=None,
+                 batch_size=None,
                  trial = None,
                  source_state_dict = None):
         self.trial = trial
