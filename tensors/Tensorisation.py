@@ -70,7 +70,7 @@ class Tensorisation:
         self.domain_min = domain_min
         self.domain_max = domain_max
 
-    def tensor_creation(self):
+    def tensor_creation(self, WFE=False, window_days=30):
         """
         The method doing the tensor creation
         :return: tensors, split in a train and test set, with features (X) and targets (y)
@@ -119,13 +119,34 @@ class Tensorisation:
         y_tensor = y_tensor[self.lags:]
         y_train, y_test = _scale(y_tensor[:flat_train_len],
                                     y_tensor[flat_train_len:],
-                                    domain_min=self.domain_min[i] if isinstance(self.domain_max,
-                                                                                list) else None,
-                                    domain_max=self.domain_max[i] if isinstance(self.domain_max,
-                                                                                list) else None)
+                                     domain_min=self.domain_min[feature] if isinstance(self.domain_max, dict) else None,
+                                domain_max=self.domain_max[feature] if isinstance(self.domain_max, dict) else None)
 
         y_train = y_train.view(train_len, self.forecast_period, 1)
         y_test = y_test.view(test_len, self.forecast_period, 1)
+
+
+        if WFE:
+            X = torch.concat([X_train, X_test])
+            y = torch.concat([y_train, y_test])
+            iterations = int(X.size(0)/window_days)
+            X_train =[]
+            X_test = []
+            y_train = []
+            y_test = []
+            for i in range(iterations):
+                y_test.append(y[i*window_days:(i+1)*window_days, :,:])
+                X_test.append(X[i*window_days:(i+1)*window_days, :,:])
+                if iterations <= 12:
+                    X_train.append(X[:(i+1)*window_days, :,:])
+                    y_train.append(y[:(i+1)*window_days, :,:])
+                else:
+                    # After 12 iterations, expanding window goes to rolling window to avoid having over exessive data
+                    X_train.append(X[(i-12)*window_days:(i+1)*window_days, :,:])
+                    y_train.append(y[(i-12)*window_days:(i+1)*window_days, :,:])
+            
+            y_test.append(y[iterations*window_days:,:,:])
+            X_test.append(X[iterations*window_days:,:,:])
 
         return X_train, X_test, y_train, y_test
 
@@ -155,8 +176,8 @@ class Tensorisation:
             X_tensor = X_tensor[self.lags:]
             # Use the scaling method to get everything between 0 and 1     
             eval, _ = _scale(X_tensor,
-                                domain_min=self.domain_min[i] if isinstance(self.domain_max, list) else None,
-                                domain_max=self.domain_max[i] if isinstance(self.domain_max, list) else None)
+                                 domain_min=self.domain_min[feature] if isinstance(self.domain_max, dict) else None,
+                                domain_max=self.domain_max[feature] if isinstance(self.domain_max, dict) else None)
 
             # Use the moving window to go from the flat tensor to the correct dimensions (window, lags per window)
             X_eval[:, :, i] = _moving_window(eval,
@@ -168,8 +189,8 @@ class Tensorisation:
         y_tensor = torch.tensor(self.data['P']).type(torch.float32)
         y_tensor = y_tensor[self.lags:]   
         y_eval, _ = _scale(y_tensor,
-                                   domain_min=self.domain_min[i] if isinstance(self.domain_max, list) else None,
-                                   domain_max=self.domain_max[i] if isinstance(self.domain_max, list) else None)    
+                                    domain_min=self.domain_min[feature] if isinstance(self.domain_max, dict) else None,
+                                domain_max=self.domain_max[feature] if isinstance(self.domain_max, dict) else None)    
         y_eval = y_eval.view(windows, self.forecast_period, 1)
         # Make the target vector if the feature is our target
        

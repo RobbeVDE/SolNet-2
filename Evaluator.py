@@ -2,9 +2,12 @@ from Data.Featurisation import data_handeler
 from Models.models import tester
 from scale import Scale
 from Models.lstm import LSTM
+from hyperparameters.hyperparameters import hyperparameters_target
 from evaluation.evaluation import Evaluation
 import matplotlib.pyplot as plt
 import torch
+import pickle
+
 forecast_period = 24
 #### Model parameters
 batch_size = 18
@@ -17,9 +20,8 @@ optimizer_name = "Adam"
 dataset_name = "nwp"
 source_dataset, target_dataset, eval_dataset = data_handeler("nwp", "nwp", "nwp", True)
 
-
-features= list(source_dataset.columns)
-features.remove('P')
+with open("hyperparameters/HP_source.pkl", 'rb') as f:
+    features = pickle.load(f)
 scale = Scale()
 scale.load("nwp")
 
@@ -29,9 +31,12 @@ if "is_day" in features:
 else:
     day_index=None
     input_size = len(features)
+hp = hyperparameters_target()
+hp.load(3)
+
 
 target_state_dict = torch.load("Models/source")
-target_model = LSTM(input_size, n_nodes, n_layers, forecast_period, dropout)
+target_model = LSTM(input_size, hp.n_nodes, hp.n_layers, forecast_period, hp.dropout)
 target_model.load_state_dict(target_state_dict)
 
 y_truth, y_forecast = tester(eval_dataset, features, target_model, scale)

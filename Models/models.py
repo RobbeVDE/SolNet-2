@@ -6,7 +6,8 @@ from evaluation.evaluation import Evaluation
 from Models.training import Training
 from Models.lstm import LSTM
 from pvlib.pvsystem import PVSystem, FixedMount
-
+import numpy as np
+import optuna
 from pvlib.modelchain import ModelChain
 
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
@@ -43,7 +44,7 @@ def source(dataset, features, hp, scale):
     else: #Only concerned about accuracy when doing HP tuning
         return avg_error
     
-def target(dataset, features, hp, scale):
+def target(dataset, features, hp, scale, WFE):
     if "is_day" in features:
         day_index =  features.index("is_day") #BCS power also feature
         input_size = len(features)-1
@@ -55,7 +56,10 @@ def target(dataset, features, hp, scale):
     if hp.source_state_dict is not None:
         transfer_model.load_state_dict(hp.source_state_dict)
     
-    avg_error, target_state_dict = trainer(dataset, features, hp, transfer_model, scale=scale)
+    if WFE:
+        avg_error, target_state_dict = WF_trainer(dataset, features, hp, transfer_model, scale=scale) 
+    else:
+        avg_error, target_state_dict = trainer(dataset, features, hp, transfer_model, scale=scale)
     if hp.trial is None:
         return avg_error, target_state_dict
     else:
@@ -136,6 +140,49 @@ def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MS
 
     return avg_error, state_dict
 
+def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MSELoss()):
+
+
+    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, 
+                            train_test_split=scale.split, domain_min=scale.min,domain_max=scale.max)
+    X_train, X_test, y_train, y_test = tensors.tensor_creation(WFE=True)
+    
+    print("Shape of data: ", X_train[0].shape, X_test[0].shape, y_train[0].shape, y_test[0].shape)
+
+    y_forecast = torch.zeros(len(X_test),30,24)
+    # Initialize the trainer
+    mse = []
+    for i in range(len(X_test)):
+        model.eval()
+        
+        with torch.inference_mode():
+            y_interm = model(X_test[i])
+        y_interm = y_interm.squeeze()
+        #y_forecast[i,:,:] = y_interm
+
+        y_f_mse = y_interm.cpu().detach().flatten().numpy()
+        y_t_mse = y_test[i].cpu().detach().flatten().numpy()
+
+        mse.append(np.mean(np.square(y_f_mse-y_t_mse)))
+        print(f"Currently in month {i}. MSE for this month is: {mse[-1]}")
+        if hp.trial is not None:
+            hp.trial.report(mse, i)
+            if hp.trial.should_prune():
+                raise optuna.exceptions.TrialPruned()
+        if i != len(X_test)-1:
+            training = Training(model, X_train[i], y_train[i], None, None, epochs, learning_rate=hp.lr, criterion=criterion, 
+                            trial=hp.trial, optimizer_name=hp.optimizer_name, batch_size=hp.batch_size)
+        avg_error, state_dict = training.fit()
+        model.load_state_dict(state_dict)
+
+    plt.plot(mse)
+    plt.show()   
+
+    avg_mse = np.mean(mse) 
+
+
+    return avg_mse, state_dict
+
 def tester(dataset, features, model, scale=None): #Here plotting possibility??
     #In evaluation data the power should be removed and can then be compared
     tensor = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale.min, domain_max=scale.max)
@@ -206,5 +253,30 @@ def unscale(y, max, min):
     y = y*(max-min) + min
 
     return y
+import time
+import os
+class Timer:
+    def __init__(self) -> None:
+        self.start_time = time.time()
+    
+    def stop(self):
+        self.end_time = time.time()
+
+    def elapsed_time(self):
+        
+        return self.end_time-self.start_time
+    
+    def save_time(self, 
+                  case):
+        
+        try:
+            timers = pd.read_pickle("timers.pkl")
+        except:
+            timers = pd.DataFrame()
+        
+        timers.loc[:,case] = self.end_time-self.start_time
+
+        timers.to_pickle("timers.pkl")
+    
 
     

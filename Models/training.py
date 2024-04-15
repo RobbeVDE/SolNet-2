@@ -50,14 +50,27 @@ class Training:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         train_data = TensorDataset(X_train.to(self.device), y_train.to(self.device))
-        test_data = TensorDataset(X_test.to(self.device), y_test.to(self.device))
-
-        days = y_train.shape[0] + y_test.shape[0]
-        self.months = round(days / 30.5)
-        self.total_data = ConcatDataset([train_data, test_data])
-        self.batch_size = batch_size
         self.train_loader = DataLoader(train_data, batch_size=batch_size)
-        self.test_loader = DataLoader(test_data, batch_size=batch_size)
+
+        if (y_test is not None) or (X_test is not None):
+            test_data = TensorDataset(X_test.to(self.device), y_test.to(self.device))
+            self.test_loader = DataLoader(test_data, batch_size=batch_size)
+            days = y_train.shape[0] + y_test.shape[0]
+
+            # For Cross-validation
+            self.total_data = ConcatDataset([train_data, test_data])
+            self.batch_size = batch_size
+
+            self.testing = True
+        else:
+            days = y_train.shape[0]
+            self.testing = False
+
+        self.months = round(days / 30.5)
+
+        
+        
+        
 
         self.trial = trial
         self.model = model
@@ -98,44 +111,56 @@ class Training:
                 loss.backward()
                 optimizer.step()
 
-            self.model.eval()
-
-            with torch.inference_mode():
-                test_batches = iter(self.test_loader)
-
-                for input, output in test_batches:
-                    prediction = self.model(input)
-                    output = output.squeeze()
-                    test_loss = self.criterion(prediction, output)
-
-                    total_loss_test += float(test_loss)
-                    num_test_batches += 1
-
             avg_train_error.append(total_loss / num_train_batches)
-            avg_test_error.append(total_loss_test / num_test_batches)
-            if early_stopper.early_stop(avg_test_error[-1]) and ES_option:
-                break
+
+            if self.testing:
+                self.model.eval()
+
+                with torch.inference_mode():
+                    test_batches = iter(self.test_loader)
+
+                    for input, output in test_batches:
+                        prediction = self.model(input)
+                        output = output.squeeze()
+                        test_loss = self.criterion(prediction, output)
+
+                        total_loss_test += float(test_loss)
+                        num_test_batches += 1
+
+            
+                avg_test_error.append(total_loss_test / num_test_batches)
+                if early_stopper.early_stop(avg_test_error[-1]) and ES_option:
+                    break
+                if self.trial is not None:
+                    self.trial.report(avg_test_error[-1], epoch)
+                    if self.trial.should_prune():
+                        raise optuna.exceptions.TrialPruned()
+                if epoch % 5 == 0:
+                    print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch, avg_train_error[epoch],
+                                                                                                avg_test_error[epoch]))
+            else:
+                if epoch % 5 == 0:
+                    print('Step {}: Average train loss: {:.4f}'.format(epoch, avg_train_error[epoch]))
             
             state_dict_list.append(self.model.state_dict())
-            if self.trial is not None:
-                self.trial.report(avg_train_error[-1], epoch)
-                if self.trial.should_prune():
-                    raise optuna.exceptions.TrialPruned()
-            if epoch % 5 == 0:
-                print('Step {}: Average train loss: {:.4f} | Average test loss: {:.4f}'.format(epoch, avg_train_error[epoch],
-                                                                                            avg_test_error[epoch]))
+            
+        if self.testing:
+            argmin = avg_test_error.index(min(avg_test_error))
+            avg_error = avg_test_error
+        else:
+            argmin = avg_train_error.index(min(avg_train_error))
+            avg_error = avg_train_error
 
-        argmin_test = avg_test_error.index(min(avg_test_error))
+        print('Best Epoch: ' + str(argmin))
 
-        print('Best Epoch: ' + str(argmin_test))
+        if self.testing:
+            plt.plot(avg_train_error, label='train error ' + str(self.months) + ' months')
+            plt.plot(avg_test_error, label='test error ' + str(self.months) + ' months')
+            plt.legend()
 
-        plt.plot(avg_train_error, label='train error ' + str(self.months) + ' months')
-        plt.plot(avg_test_error, label='test error ' + str(self.months) + ' months')
-        plt.legend()
+            plt.show()
 
-        plt.show()
-
-        return min(avg_test_error), state_dict_list[argmin_test]
+        return min(avg_error), state_dict_list[argmin]
 
     def fit_cv(self):
         fold_avg_test_loss = []
