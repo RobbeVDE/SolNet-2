@@ -118,6 +118,44 @@ def persistence(dataset):
 
     return eval_obj
 
+from pvlib import temperature, irradiance, location, pvsystem
+def physical(dataset, tilt, azimuth, peakPower, peakInvPower, temp_coeff=-0.004, loss_inv=0.96, latitude=None, longitude=None):
+    
+    try:
+        poa = dataset['PoA']
+    except:
+        azimuth = azimuth+180 #PVGIS works in [-180,180] and pvlib in [0,360]
+
+        site = location.Location(latitude, longitude,  tz='UTC')
+        
+        times = dataset.index
+        solar_position = site.get_solarposition(times=times)
+        ghi = dataset["downward_surface_SW_flux"]
+        dhi = dataset["diffuse_surface_SW_flux"]
+        dni = dataset["direct_surface_SW_flux"]
+        dni_extra = irradiance.get_extra_radiation(times)
+        POA_irrad = irradiance.get_total_irradiance(surface_tilt=tilt, surface_azimuth=azimuth, 
+                                                    dni=dni, ghi=ghi, dhi=dhi, solar_zenith=solar_position['apparent_zenith'],
+                                                    dni_extra=dni_extra, model='perez',solar_azimuth=solar_position['azimuth'])
+        poa = POA_irrad['poa_global'].fillna(0)
+
+
+    temp = dataset['temperature_1_5m'] -275.13
+    wind_speed = dataset['wind_speed_10m']
+    wind_height = 10
+
+    temp_cell = temperature.fuentes(poa, temp, wind_speed, 49, wind_height=wind_height,
+                                          surface_tilt=tilt)
+    
+    inv_params = {'pdc0': peakInvPower, 'eta_inv_nom': loss_inv}
+    module_params = {'pdc0': peakPower, 'gamma_pdc': temp_coeff}
+    mount = pvsystem.FixedMount(surface_tilt=tilt, surface_azimuth=azimuth)
+    array = pvsystem.Array(mount=mount, module_parameters = module_params)
+    pvsys = pvsystem.PVSystem(arrays=[array], inverter_parameters=inv_params)
+    dc_power = pvsys.pvwatts_dc(poa, temp_cell)
+    ac = pvsys.get_ac('pvwatts', dc_power)
+
+    return ac
 
 def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MSELoss()):
 
@@ -158,7 +196,7 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
         with torch.inference_mode():
             y_interm = model(X_test[i])
         y_interm = y_interm.squeeze()
-        #y_forecast[i,:,:] = y_interm
+        y_forecast[i,:,:] = y_interm
 
         y_f_mse = y_interm.cpu().detach().flatten().numpy()
         y_t_mse = y_test[i].cpu().detach().flatten().numpy()
@@ -170,10 +208,13 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
             if hp.trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
         if i != len(X_test)-1:
+            
             training = Training(model, X_train[i], y_train[i], None, None, epochs, learning_rate=hp.lr, criterion=criterion, 
                             trial=hp.trial, optimizer_name=hp.optimizer_name, batch_size=hp.batch_size)
-        avg_error, state_dict = training.fit()
-        model.load_state_dict(state_dict)
+            avg_error, state_dict = training.fit()
+            model.load_state_dict(state_dict)
+
+
 
     plt.plot(mse)
     plt.show()   

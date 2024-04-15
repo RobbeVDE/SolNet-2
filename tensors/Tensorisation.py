@@ -145,8 +145,15 @@ class Tensorisation:
                     X_train.append(X[(i-12)*window_days:(i+1)*window_days, :,:])
                     y_train.append(y[(i-12)*window_days:(i+1)*window_days, :,:])
             
-            y_test.append(y[iterations*window_days:,:,:])
-            X_test.append(X[iterations*window_days:,:,:])
+            #Pad with zeroes last test month to have consistent tensor sizes
+            
+            y_final = torch.zeros(window_days, y.size(1), y.size(2))
+            n_days_left = X.size(0)%window_days
+            y_final[:n_days_left,:,:] = y[iterations*window_days:,:,:]
+            X_final = torch.zeros(window_days, X.size(1), X.size(2))
+            X_final[:n_days_left,:,:] = X[iterations*window_days:,:,:]
+            y_test.append(y_final)
+            X_test.append(X_final)
 
         return X_train, X_test, y_train, y_test
 

@@ -67,7 +67,7 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
                 if value:
                     final_features.append(key)
 
-            with open(f"hyperparameters/HP_{tuning_model}.pkl", 'wb') as f:
+            with open(f"hyperparameters/features.pkl", 'wb') as f:
                 pickle.dump(final_features, f)
             
         else:

@@ -7,16 +7,16 @@ import pickle
 #### Model parameters
 
 dataset_name = "nwp"
-source_dataset, _, _ = data_handeler("nwp", "nwp", "nwp", False)
-with open("hyperparameters/HP_source.pkl", 'rb') as f:
+source_dataset, _, _ = data_handeler(dataset_name, "nwp", "nwp", False)
+with open("hyperparameters/features.pkl", 'rb') as f:
             features = pickle.load(f)
 
 scale = Scale()
-scale.load("nwp")
+scale.load(dataset_name)
 
 hp = hyperparameters_source()
 hp.load(3)
 
 accuracy, state_dict = source(source_dataset, features, hp, scale)
 
-torch.save(state_dict, "Models/source")
+torch.save(state_dict, f"Models/source_{dataset_name}")

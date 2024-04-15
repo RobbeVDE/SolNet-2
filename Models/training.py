@@ -252,6 +252,8 @@ class Training:
         return avg_error, best_state_dict
 
 
+    
+
 class EarlyStopper:
     def __init__(self, patience, min_delta=0):
         self.patience = patience

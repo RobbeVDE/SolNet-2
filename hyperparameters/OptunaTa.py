@@ -14,7 +14,7 @@ installation_id = "3437BD60"
 def objective(trial, dataset, source_state_dict, scale, step):
 
     if step == 3:
-        with open("hyperparameters/HP_source.pkl", 'rb') as f:
+        with open("hyperparameters/features.pkl", 'rb') as f:
             features = pickle.load(f)
     else:
         print("Only step 3 is done for target model")

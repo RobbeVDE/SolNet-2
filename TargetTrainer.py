@@ -13,19 +13,19 @@ n_nodes = 100
 optimizer_name = "Adam"
 
 dataset_name = "nwp"
-source_dataset, target_dataset, _ = data_handeler("nwp", "nwp", "nwp", True)
+source_dataset, target_dataset, _ = data_handeler(dataset_name, "nwp", "nwp", True)
 
-with open("hyperparameters/HP_source.pkl", 'rb') as f:
+with open("hyperparameters/features.pkl", 'rb') as f:
     features = pickle.load(f)
 scale = Scale()
-scale.load("nwp")
+scale.load(dataset_name)
 
-source_state_dict = torch.load("Models/source")
+source_state_dict = torch.load(f"Models/source_{dataset_name}")
 
 hp = hyperparameters_target()
 hp.load(3)
-hp.source_state_dict = source_state_dict
+#hp.source_state_dict = source_state_dict
 
-accuracy, state_dict = target(target_dataset, features, hp, scale, True)
+accuracy, state_dict,_,_ = target(target_dataset, features, hp, scale, True)
 
-torch.save(state_dict, "Models/target")
+torch.save(state_dict, f"Models/target")
