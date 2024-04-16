@@ -1,5 +1,5 @@
 from optuna.trial import TrialState
-from optuna.samplers import TPESampler
+from optuna import samplers 
 from hyperparameters.hyperparameters import hyperparameters_source, hyperparameters_target
 from Data.Featurisation import data_handeler
 from scale import Scale
@@ -32,17 +32,24 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
 
     storage_name = f"sqlite:///HP_{tuning_model}.db"
     study_name = f"{dataset_name} | transfo: {transfo} | TL: {TL} | Step: {step}"
+
+    #Sampler initialisation
     try:
         sampler = pickle.load(open(f"hyperparameters/samplers/sampler_{tuning_model}_{dataset_name}_{transfo}_{TL}_{step}.pkl", "rb"))
         print("Using existing sampler.") 
     except: #If there is no sampler present, make a new one
-        sampler = TPESampler(seed=10)  # Make the sampler behave in a deterministic way. For reproducibility.
+        if step == 1: #Initial HP tuning is exploration based such that we know importance of HP better
+            sampler = samplers.RandomSampler(seed=10)  # Make the sampler behave in a deterministic way. For reproducibility.
+        else:        
+            sampler = samplers.TPESampler(seed=10)
 
     study = optuna.create_study(study_name=study_name, storage=storage_name, direction="minimize", 
                                 load_if_exists=True, sampler=sampler)
     try:
-        if step == 1: #Less trials for fist estimate at HP bcs not that important yet
-            n_trials = 30
+        if step == 2:
+            n_trials = 300
+        elif step == 1:
+            n_trials = 50
         else:
             n_trials = 100
         study.optimize(objective, n_trials=n_trials)

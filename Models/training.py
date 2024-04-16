@@ -218,7 +218,7 @@ class Training:
                     avg_train_error.append(total_loss / num_train_batches)
                     avg_test_error.append(total_loss_test / num_test_batches)
                     state_dict_list.append(self.model.state_dict())
-                    if self.trial is not None:
+                    if (self.trial is not None) and (fold==0):
                         self.trial.report(avg_test_error[-1], epoch)   
                         if self.trial.should_prune():
                             raise optuna.exceptions.TrialPruned()
