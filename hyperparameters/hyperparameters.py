@@ -8,7 +8,8 @@ class hyperparameters_source():
                  n_nodes=None,
                  dropout=None,
                  batch_size=None,
-                 trial = None):
+                 trial = None,
+                 gif_plotter=False):
         self.trial = trial
         self.optimizer_name = optimizer_name
         self.lr = lr
@@ -16,6 +17,7 @@ class hyperparameters_source():
         self.n_nodes = n_nodes
         self.dropout = dropout
         self.batch_size = batch_size
+        self.gif_plotter = gif_plotter
     
     def save(self, step):
         with open(f"hyperparameters/HP_source{step}.pkl", 'wb') as f:

@@ -3,11 +3,14 @@ from torch.utils.data import DataLoader, TensorDataset, ConcatDataset
 from torch import nn
 import numpy as np
 import matplotlib.pyplot as plt
+import scienceplots
+plt.style.use(["science"])
 from sklearn.model_selection import KFold
 cross_validate = False
 ES_option = False # Option to use early stopping
 import optuna
 import torch.optim as optim
+
 
 torch.manual_seed(0) #More deterministic for reproducible results
 def save_model(model, name):
@@ -33,7 +36,8 @@ class Training:
             trial=None,
             batch_size=32,
             learning_rate=0.001,
-            criterion=torch.nn.MSELoss()
+            criterion=torch.nn.MSELoss(),
+            infer_day = None
             ):
         """
         The training class for the pytorch model
@@ -67,6 +71,12 @@ class Training:
             self.testing = False
 
         self.months = round(days / 30.5)
+
+        self.infer_day = infer_day
+
+        if infer_day is not None:
+            self.X_infer = X_test[self.infer_day:self.infer_day+3,:,:]
+            self.y_infer = y_test[self.infer_day:self.infer_day+3,:,:]
 
         
         
@@ -144,6 +154,23 @@ class Training:
             
             state_dict_list.append(self.model.state_dict())
             
+            if self.infer_day is not None:
+                prediction = self.model(self.X_infer)
+                prediction = prediction.cpu().detach().flatten().numpy()
+                y_truth = self.y_infer.cpu().detach().flatten().numpy()
+                plt.figure()
+                plt.title(f'Forecast of the in-training model')
+                plt.ylabel('Power [kW]')
+                plt.plot(y_truth, label="Actual PV power")
+                plt.plot(prediction, label="Day- Ahead Forecast")
+                plt.ylim([-0.1,1])
+                plt.legend()
+                plt.savefig(f'Figures/TrainProgress/{epoch}')
+                plt.close()
+
+
+
+
         if self.testing:
             argmin = avg_test_error.index(min(avg_test_error))
             avg_error = avg_test_error

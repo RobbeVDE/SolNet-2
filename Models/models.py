@@ -166,9 +166,12 @@ def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MS
     
     print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
+    if hp.gif_plotter:
+        infer_day = 38 #Just a random day
+
     # Initialize the trainer
     training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=hp.lr, criterion=criterion, 
-                        trial=hp.trial, optimizer_name=hp.optimizer_name, batch_size=hp.batch_size)
+                        trial=hp.trial, optimizer_name=hp.optimizer_name, batch_size=hp.batch_size, infer_day=infer_day)
 
     # Train the model and return the trained parameters and the best iteration
     if hp.trial is None:
