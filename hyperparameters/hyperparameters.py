@@ -9,22 +9,24 @@ class hyperparameters_source():
                  dropout=None,
                  batch_size=None,
                  trial = None,
+                 bidirectional=False,
                  gif_plotter=False):
         self.trial = trial
         self.optimizer_name = optimizer_name
         self.lr = lr
+        self.bd = bidirectional
         self.n_layers = n_layers
         self.n_nodes = n_nodes
         self.dropout = dropout
         self.batch_size = batch_size
         self.gif_plotter = gif_plotter
     
-    def save(self, step):
-        with open(f"hyperparameters/HP_source{step}.pkl", 'wb') as f:
+    def save(self, case_n, step):
+        with open(f"hyperparameters/HP_source_{case_n}_{step}.pkl", 'wb') as f:
             pickle.dump(self, f)
     
-    def load(self, step):
-        with open(f"hyperparameters/HP_source{step}.pkl", 'rb') as f:
+    def load(self, case_n, step):
+        with open(f"hyperparameters/HP_source_{case_n}_{step}.pkl", 'rb') as f:
             hp = pickle.load(f)
             self.optimizer_name = hp.optimizer_name
             self.lr = hp.lr
@@ -52,12 +54,12 @@ class hyperparameters_target():
         self.dropout = dropout
         self.batch_size = batch_size
 
-    def save(self, step):
-        with open(f"hyperparameters/HP_target{step}.pkl", 'wb') as f:
+    def save(self, case_n, step):
+        with open(f"hyperparameters/HP_target_{case_n}_{step}.pkl", 'wb') as f:
             pickle.dump(self, f)
     
-    def load(self, step=1):
-        with open(f"hyperparameters/HP_target{step}.pkl", 'rb') as f:
+    def load(self, case_n, step=3):
+        with open(f"hyperparameters/HP_target_{case_n}_{step}.pkl", 'rb') as f:
             hp = pickle.load(f)
             self.optimizer_name = hp.optimizer_name
             self.lr = hp.lr

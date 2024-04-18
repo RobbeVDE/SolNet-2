@@ -2,7 +2,8 @@ import pickle
 import pandas as pd
 from tensors.Tensorisation import Tensorisation
 import torch
-from evaluation.evaluation import Evaluation
+import evaluation.evaluation as evl
+from evaluation.timer import Timer
 from Models.training import Training
 from Models.lstm import LSTM
 from pvlib.pvsystem import PVSystem, FixedMount
@@ -36,7 +37,7 @@ def source(dataset, features, hp, scale):
         day_index=None
         input_size = len(features)
     
-    source_model = LSTM(input_size,hp.n_nodes,hp.n_layers, forecast_period, hp.dropout, day_index).to(device)
+    source_model = LSTM(input_size,hp.n_nodes,hp.n_layers, forecast_period, hp.dropout, hp.bd, day_index).to(device)
         
     avg_error, source_state_dict = trainer(dataset, features, model=source_model, hp=hp, scale=scale)
     if hp.trial is None:
@@ -51,17 +52,17 @@ def target(dataset, features, hp, scale, WFE):
     else:
         day_index=None
         input_size = len(features)
-    transfer_model = LSTM(input_size,hp.n_nodes, hp.n_layers, forecast_period, hp.dropout, day_index).to(device)
+    transfer_model = LSTM(input_size,hp.n_nodes, hp.n_layers, forecast_period, hp.dropout, hp.bd, day_index).to(device)
     
     if hp.source_state_dict is not None:
         transfer_model.load_state_dict(hp.source_state_dict)
     
     if WFE:
-        avg_error, target_state_dict = WF_trainer(dataset, features, hp, transfer_model, scale=scale) 
+        avg_error, times = WF_trainer(dataset, features, hp, transfer_model, scale=scale) 
     else:
-        avg_error, target_state_dict = trainer(dataset, features, hp, transfer_model, scale=scale)
+        avg_error, times = trainer(dataset, features, hp, transfer_model, scale=scale)
     if hp.trial is None:
-        return avg_error, target_state_dict
+        return avg_error, times
     else:
         return avg_error
 
@@ -111,14 +112,20 @@ def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuni
 
 
 def persistence(dataset):
-
+    infer_timer = Timer()
     y_forecast = dataset['P_24h_shift']
+    infer_timer.stop()
     y_truth = dataset['P']
-    eval_obj = Evaluation(y_truth, y_forecast)
+    powers = pd.concat([y_truth, y_forecast], axis=1)
+    error = powers.groupby(powers.index.month).apply(r2_rmse).reset_index()
+    error = error['rmse'].to_list()
+    print(error)
+    times = {'Inference Time': [infer_timer.elapsed_time()/12]*12} #Just assume it takes same amount of time for each month which makes sense
 
-    return eval_obj
+    return error, times
 
 from pvlib import temperature, irradiance, location, pvsystem
+from sklearn.metrics import r2_score, mean_squared_error
 def physical(dataset, tilt, azimuth, peakPower, peakInvPower, temp_coeff=-0.004, loss_inv=0.96, latitude=None, longitude=None):
     
     try:
@@ -139,7 +146,7 @@ def physical(dataset, tilt, azimuth, peakPower, peakInvPower, temp_coeff=-0.004,
                                                     dni_extra=dni_extra, model='perez',solar_azimuth=solar_position['azimuth'])
         poa = POA_irrad['poa_global'].fillna(0)
 
-
+    infer_timer = Timer()
     temp = dataset['temperature_1_5m'] -275.13
     wind_speed = dataset['wind_speed_10m']
     wind_height = 10
@@ -153,9 +160,23 @@ def physical(dataset, tilt, azimuth, peakPower, peakInvPower, temp_coeff=-0.004,
     array = pvsystem.Array(mount=mount, module_parameters = module_params)
     pvsys = pvsystem.PVSystem(arrays=[array], inverter_parameters=inv_params)
     dc_power = pvsys.pvwatts_dc(poa, temp_cell)
-    ac = pvsys.get_ac('pvwatts', dc_power)
+    forecast = pvsys.get_ac('pvwatts', dc_power)
+  
+    infer_timer.stop()
+    actual = dataset[['P']]
+    powers = pd.concat([actual, forecast], axis=1)
+    error = powers.groupby(powers.index.month).apply(r2_rmse).reset_index()
+    error = error['rmse'].to_list()
+    times = {'Inference Time': [infer_timer.elapsed_time()/12]*12} #Just assume it takes same amount of time for each month which makes sense
 
-    return ac
+
+
+
+    return error, times
+
+def r2_rmse(g):
+    rmse = np.sqrt(mean_squared_error(g.iloc[:,0], g.iloc[:,1]))
+    return pd.Series(dict(rmse = rmse))
 
 def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MSELoss()):
 
@@ -168,6 +189,8 @@ def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MS
 
     if hp.gif_plotter:
         infer_day = 38 #Just a random day
+    else:
+        infer_day =None
 
     # Initialize the trainer
     training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=hp.lr, criterion=criterion, 
@@ -193,13 +216,18 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
     y_forecast = torch.zeros(len(X_test),30,24)
     # Initialize the trainer
     mse = []
+    inf_times = []
+    training_times = []
     for i in range(len(X_test)):
         model.eval()
         
         with torch.inference_mode():
+            inf_timer = Timer()
             y_interm = model(X_test[i])
+            inf_timer.stop()
         y_interm = y_interm.squeeze()
         y_forecast[i,:,:] = y_interm
+        inf_times.append(inf_timer.elapsed_time())
 
         y_f_mse = y_interm.cpu().detach().flatten().numpy()
         y_t_mse = y_test[i].cpu().detach().flatten().numpy()
@@ -211,21 +239,23 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
             if hp.trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
         if i != len(X_test)-1:
-            
+            train_timer = Timer()
             training = Training(model, X_train[i], y_train[i], None, None, epochs, learning_rate=hp.lr, criterion=criterion, 
                             trial=hp.trial, optimizer_name=hp.optimizer_name, batch_size=hp.batch_size)
             avg_error, state_dict = training.fit()
+            train_timer.stop()
             model.load_state_dict(state_dict)
+            training_times.append(train_timer.elapsed_time())
 
+    
+    if hp.trial is not None: #If HP report average mse
+        error = np.mean(mse)
+    else:
+        error  = np.root(mse)
 
+    times = {'Inference Time':inf_times, 'Training Time': training_times}
 
-    plt.plot(mse)
-    plt.show()   
-
-    avg_mse = np.mean(mse) 
-
-
-    return avg_mse, state_dict
+    return error, times
 
 def tester(dataset, features, model, scale=None): #Here plotting possibility??
     #In evaluation data the power should be removed and can then be compared
@@ -297,30 +327,6 @@ def unscale(y, max, min):
     y = y*(max-min) + min
 
     return y
-import time
-import os
-class Timer:
-    def __init__(self) -> None:
-        self.start_time = time.time()
-    
-    def stop(self):
-        self.end_time = time.time()
 
-    def elapsed_time(self):
-        
-        return self.end_time-self.start_time
-    
-    def save_time(self, 
-                  case):
-        
-        try:
-            timers = pd.read_pickle("timers.pkl")
-        except:
-            timers = pd.DataFrame()
-        
-        timers.loc[:,case] = self.end_time-self.start_time
-
-        timers.to_pickle("timers.pkl")
-    
 
     

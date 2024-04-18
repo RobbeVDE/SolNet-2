@@ -1,5 +1,5 @@
 from Data.Featurisation import data_handeler
-from Models.models import physical
+from Models.models import target
 from scale import Scale
 from Models.lstm import LSTM
 import pandas as pd
@@ -19,52 +19,43 @@ n_nodes = 100
 optimizer_name = "Adam"
 
 dataset_name = "nwp"
-phys_transfo = True
+phys_transfo = False
 source_dataset, target_dataset, eval_dataset = data_handeler(dataset_name, "nwp", "nwp", phys_transfo)
 
 # with open("hyperparameters/features.pkl", 'rb') as f:
 #     features = pickle.load(f)
-# scale = Scale()
-# scale.load(dataset_name)
+features = list(source_dataset.columns)
 
-# if "is_day" in features:
-#     day_index =  features.index("is_day") #BCS power also feature
-#     input_size = len(features)-1
-# else:
-#     day_index=None
-#     input_size = len(features)
-# hp = hyperparameters_target()
-# hp.load(3)
+scale = Scale()
+scale.load(dataset_name)
+
+if "is_day" in features:
+    day_index =  features.index("is_day") #BCS power also feature
+    input_size = len(features)-1
+else:
+    day_index=None
+    input_size = len(features)
+hp = hyperparameters_target()
+hp.load(3)
 
 
-# source_state_dict = torch.load("Models/source")
-# hp.source_state_dict = source_state_dict
+source_state_dict = torch.load("Models/source_nwp")
+hp.source_state_dict = source_state_dict
+hp.bd = True
 
-# accuracy, state_dict, y_truth, y_forecast = target(target_dataset, features, hp, scale, WFE = True)
+accuracy, state_dict, y_truth, y_forecast = target(target_dataset, features, hp, scale, WFE = True)
 
-# y_truth = y_truth.cpu().detach().flatten().numpy()
-# y_forecast = y_forecast.cpu().detach().flatten().numpy()
+y_truth = y_truth.cpu().detach().flatten().numpy()
+y_forecast = y_forecast.cpu().detach().flatten().numpy()
 
-installation_id = "3437BD60"
-metadata = pd.read_csv("Data/installations Netherlands.csv", sep=';')
-metadata = metadata.set_index('id')
-metadata_id = metadata.loc[installation_id]
-tilt = metadata_id["Tilt"]
-peakPower = metadata_id["Watt Peak"]
-azimuth = metadata_id["Orientation"]
-latitude = metadata_id["Latitude"]
-longitude = metadata_id["Longitude"]
 
-y_forecast = physical(eval_dataset, tilt, azimuth, peakPower, 2500, latitude=latitude, longitude=longitude,
-                       loss_inv = 0.84, temp_coeff=-0.002)
-y_truth = eval_dataset['P']
 
 eval_obj = Evaluation(y_truth, y_forecast)
 print(eval_obj.metrics())
 plt.figure()
 
 day = 1
-# plt.plot(y_forecast,  label="Forecast")
-# plt.plot(y_truth, label="Truth")
-# plt.legend()
-# plt.show()
+plt.plot(y_forecast,  label="Forecast")
+plt.plot(y_truth, label="Truth")
+plt.legend()
+plt.show()

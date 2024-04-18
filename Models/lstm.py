@@ -9,6 +9,7 @@ class LSTM(nn.Module):
             num_layers,
             output_size,
             dropout,
+            bidirectional = False,
             day_index = None):
         """
         Simple LSTM model made in pytorch   STM(input_size, optimizer_name, lr_target, n_layers_source, n_layers_target, n_nodes_source, n_nodes_target, forecast_period, dropout)
@@ -26,9 +27,14 @@ class LSTM(nn.Module):
         self.output_size = output_size
         self.dropout = dropout
         self.day_index = day_index
+        self.bd = bidirectional
 
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, dropout=dropout, batch_first=True)
-        self.linear = nn.Linear(in_features=hidden_size, out_features=output_size)
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, dropout=dropout, batch_first=True, bidirectional=bidirectional)
+        if bidirectional:
+            self.linear = nn.Linear(in_features=hidden_size*2, out_features=1)
+        else:
+            self.linear = nn.Linear(in_features=hidden_size, out_features=output_size) #Times 2 bcs output of lstm is times 2
+        
 
     def forward(self, input):
         """
@@ -51,11 +57,15 @@ class LSTM(nn.Module):
         
         hidden, _ = self.lstm(input_new, None)
 
-        if hidden.dim() == 2:
-            hidden = hidden[-1, :]
-        else:
-            hidden = hidden[:, -1, :]
+        if not self.bd:                   
+            if hidden.dim() == 2:
+                hidden = hidden[-1, :]
+            else:
+                hidden = hidden[:, -1, :]
+
         output = self.linear(hidden)
+        if self.bd:
+            output = torch.squeeze(output, dim=2)
         if self.day_index is not None:
             output[night_mask] = 0
             #output[output<0] = 0 # Other physical post-processing, we know power cannot be below zero

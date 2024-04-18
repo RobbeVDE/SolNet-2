@@ -11,14 +11,15 @@ source_dataset, _, _ = data_handeler(dataset_name, "nwp", "nwp", False)
 # with open("hyperparameters/features.pkl", 'rb') as f:
 #             features = pickle.load(f)
 features = list(source_dataset.columns)
-
+features.remove('P')
 
 scale = Scale()
 scale.load(dataset_name)
 
 hp = hyperparameters_source()
 hp.load(3)
-hp.gif_plotter = True
+hp.gif_plotter = False
+hp.bd =True
 accuracy, state_dict = source(source_dataset, features, hp, scale)
 
 torch.save(state_dict, f"Models/source_{dataset_name}")

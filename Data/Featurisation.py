@@ -157,7 +157,7 @@ class Featurisation:
     
 
     
-def data_handeler(source=None, target=None, eval=None, transform = True, month_source=False):
+def data_handeler(installation_id = "3437BD60", source=None, target=None, eval=None, transform = True, month_source=False):
     """
     Add explation, maybe more general power function if we use more test setups
     RETURNS source data, target_data, eval_data
@@ -212,7 +212,6 @@ def data_handeler(source=None, target=None, eval=None, transform = True, month_s
     openmeteo = openmeteo.rename(columns=meteo2CEDA)
 
     #NL production data
-    installation_id = "3437BD60"
     prodNL = pd.read_parquet('Data/production.parquet', engine='pyarrow')
     metadata = pd.read_csv("Data/installations Netherlands.csv", sep=';')
     metadata = metadata.set_index('id')
