@@ -6,12 +6,31 @@ import torch
 import pickle
 #### Model parameters
 
-dataset_name = "nwp"
-source_dataset, _, _ = data_handeler(dataset_name, "nwp", "nwp", False)
-# with open("hyperparameters/features.pkl", 'rb') as f:
-#             features = pickle.load(f)
-features = list(source_dataset.columns)
-features.remove('P')
+dataset_name = str(input("Dataset: Enter nwp, era5 or no_weather \n"))
+transfo = str(input("Use phys transfo: Enter True or False \n"))
+ftr_file = "hyperparameters/features_"
+case= 2 #No weather cov
+if transfo in ["True", "true"]:
+    transfo = True
+    ftr_file += "phys.pkl"
+    if dataset_name == "nwp":
+          case=1
+    elif dataset_name =="era5":
+          case=6
+elif transfo in ["False", "false"]:
+    transfo = False
+    ftr_file += "no_phys.pkl"
+    if dataset_name == "nwp":
+          case=0
+    elif dataset_name =="era5":
+          case=5
+else:
+    raise KeyError
+
+source_dataset, _, _ = data_handeler(dataset_name, "nwp", "nwp", transfo)
+with open(ftr_file, 'rb') as f:
+            features = pickle.load(f)
+
 
 scale = Scale()
 scale.load(dataset_name)

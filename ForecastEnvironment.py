@@ -1,10 +1,10 @@
 """
 Program to simulate all models and RQ and assess them on 3 metrics: RMSE, time and R². This evaluation will be done with WFval
  1. Specify model:
-    - TL(no phys)               | - TL(era5, no phys)   | - biLSTM
-    - TL(phys)                  | - TL(era5, phys)      | - CNN-LSTM ??
-    - TL(no weather cov)        | - persistence         | - ARIMA ??
-    - target(no source))        | - physical            |
+    - TL(no phys)               | - target(no S, phys)) | - physical
+    - TL(phys)                  | - TL(era5, no phys)   | - persistence
+    - TL(no weather cov)        | - TL(era5, phys)      | - CNN-LSTM ??
+    - target(no S, no phys))    | - biLSTM              | - ARIMA ??
 
 2. Specify site:
     - 34DB760
@@ -31,51 +31,48 @@ if ctn_eval:
     models = range(9)
     sites = range(3)
 else:
-    models = [int(input("Specify model:\n 0. TL(no phys)               | 4. TL(era5, no phys)   | 8. biLSTM \n 1. TL(phys)                  | 5. TL(era5, phys)      | \n 2. TL(no weather cov)        | 6. persistence         |  \n 3. target(no source))        | 7. physical            | \n"))]
+    models = [int(input("Specify model:\n 0. TL(no phys)               | 4. target(no S, phys)) | 8. physical \n 1. TL(phys)                  | 5. TL(era5, no phys)   | 9. persistence \n 2. TL(no weather cov)        | 6. TL(era5, phys)      | 10. CNN-LSTM ?? \n 3. target(no S, no phys))    | 7. biLSTM              | 11. ARIMA ?? \n"))]
     sites = [int(input("Specify site: 0. 3437DB60 \n 1. ... \n 2. .... \n"))]
 
 for i in models:
     if i <= 5:
+        hp = hyperparameters.hyperparameters_target()
+        hp.load(i, 3)
         match i:
             case 0:
                 phys = False
                 
                 with open("hyperparameters/features_no_phys.pkl", 'rb') as f:
-                    features = pickle.load(f)
-                hp = hyperparameters.hyperparameters_target()
+                    features = pickle.load(f)            
                 hp.source_state_dict = torch.load("Models/source_nwp_no_phys")
-                hp.load(0, 3)
             case 1:
                 phys = True           
-                with open("hyperparameters/features_no_phys.pkl", 'rb') as f:
+                with open("hyperparameters/features_phys.pkl", 'rb') as f:
                     features = pickle.load(f)
-                hp = hyperparameters.hyperparameters_target()
                 hp.source_state_dict = torch.load("Models/source_nwp_phys")
-                hp.load(1, 3)
             case 2:
                 features = ["P_24h_shift", "hour_sin", "hour_cos", "month_sin", "month_cos"]
                 phys = False
-                hp = hyperparameters.hyperparameters_target()
                 hp.source_state_dict = torch.load("Models/source_no_weather")
-                hp.load(2, 3)
             case 3:          
                 phys = False
                 source_state_dict = None
                 with open("hyperparameters/features_no_phys.pkl", 'rb') as f:
                     features = pickle.load(f)
-                hp = hyperparameters.hyperparameters_target()
-                hp.load(3, 3)
-            case 4:
+            case 4:          
+                phys = True
+                source_state_dict = None
+                with open("hyperparameters/features_phys.pkl", 'rb') as f:
+                    features = pickle.load(f)
+            case 5:
                 phys = False
                 with open("hyperparameters/features_no_phys.pkl", 'rb') as f:
                     features = pickle.load(f)
-                hp = hyperparameters.hyperparameters_target()
                 hp.source_state_dict = torch.load("Models/source_era5_no_phys")
-            case 5:
+            case 6:
                 phys = True
-                with open("hyperparameters/features_no_phys.pkl", 'rb') as f:
+                with open("hyperparameters/features_phys.pkl", 'rb') as f:
                     features = pickle.load(f)
-                hp = hyperparameters.hyperparameters_target()
                 hp.source_state_dict = torch.load("Models/source_era5_phys")
         for j in sites:
             installation_id = instalid_list[j]
@@ -85,13 +82,13 @@ for i in models:
 
     else:
         match i:
-            case 6:
+            case 9:
                 for j in sites:
                     installation_id = instalid_list[j]
                     _,_,eval_dataset = data_handeler(installation_id, "nwp", "nwp", "nwp", True)
                     accur, timer = md.persistence(eval_dataset)
                     metric_processor(accur, timer, i,j)
-            case 7:
+            case 8:
                 for j in sites:
                     installation_id = instalid_list[j]
                     _,_,eval_dataset = data_handeler(installation_id, "nwp", "nwp", "nwp", True)

@@ -56,6 +56,32 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
 
+        ftr_file = "hyperparameters/features_"
+        if TL:
+            if transfo:
+                if dataset_name == 'nwp':
+                    case=1
+                else:
+                    case=5
+                
+                ftr_file += f"phys.pkl"
+
+            else:
+                if dataset_name == 'nwp':
+                    case = 0
+                else:
+                    case=4
+                ftr_file += f"no_phys.pkl"
+        else:
+            if transfo:
+                case=4
+            else:
+                case=3
+
+        
+        if dataset_name == "no_weather":
+            case=2
+
         print("Study statistics: ")
         print("  Number of finished trials: ", len(study.trials))
         print("  Number of pruned trials: ", len(pruned_trials))
@@ -74,7 +100,7 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
                 if value:
                     final_features.append(key)
 
-            with open(f"hyperparameters/features.pkl", 'wb') as f:
+            with open(ftr_file, 'wb') as f:
                 pickle.dump(final_features, f)
             
         else:
@@ -98,10 +124,10 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
                 hp = hyperparameters_source(optimizer, lr, n_layers, n_units, dropout, batch_size)
             else:
                 hp_source = hyperparameters_source()
-                hp_source.load(3) #Load hyperparam source for n_layers and stuf
+                hp_source.load(case,3) #Load hyperparam source for n_layers and stuf
                 hp = hyperparameters_target(hp_source.optimizer_name, lr, hp_source.n_layers, hp_source.n_nodes,
                                             dropout, batch_size) #Only parameters you optimized
-            hp.save(step)
+            hp.save(case,step)
 
             
     except KeyboardInterrupt: #If optimization process gets interrupted the sampler is saved for next time 
@@ -113,7 +139,7 @@ if __name__ == "__main__":
     manual_enter = True
     if manual_enter:
         tuning_model = str(input("Tuning Model: Enter source or target \n"))  # Unique identifier of the study.
-        dataset_name = str(input("Dataset: Enter nwp or era5 \n"))
+        dataset_name = str(input("Dataset: Enter nwp, era5 or no_weather \n"))
         transfo = str(input("Use phys transfo: Enter True or False \n"))
 
         if transfo in ["True", "true"]:
