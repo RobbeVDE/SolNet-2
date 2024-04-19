@@ -35,8 +35,9 @@ class Scale:
         
 
 if __name__ == "__main__":
-    dataset_name = input("Dataset Name: Enter nwp or era5 \n")
-    source_dataset,_,_ = data_handeler(dataset_name, dataset_name, dataset_name)
+    installation_id = "3437BD60"
+    dataset_name = input("Dataset Name: Enter nwp, era5 or no_weather\n")
+    source_dataset,_,_ = data_handeler(installation_id, dataset_name, dataset_name, dataset_name)
     scale = Scale()
     scale.calcul(source_dataset)
     scale.save(dataset_name)

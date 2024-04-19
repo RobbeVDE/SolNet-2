@@ -236,6 +236,8 @@ def data_handeler(installation_id = "3437BD60", source=None, target=None, eval=N
             covariates = ceda
         elif entry == "era5":
             covariates = openmeteo
+        elif entry == "no_weather":
+            covariates = pd.DataFrame(index=openmeteo.index)
         elif entry is None:
             break
         else:
@@ -249,15 +251,20 @@ def data_handeler(installation_id = "3437BD60", source=None, target=None, eval=N
     #Add extra variates
     data = Featurisation(data)
     data.data = data.cyclic_features()
-    data.data = data.cyclic_angle('wind_direction_10m')
-    outlier_list = [False, True, True] #No outliers removed for evaluation as this is not
-    data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
-    if transform:
-        data.data = data.PoA(latitude, longitude, tilt, azimuth) 
-        inv_list = [False, False, True] #Pre-processing only allowed for 
+    
+    if source != 'no_weather':
+        data.data = data.cyclic_angle('wind_direction_10m')
+        outlier_list = [False, True, True] #No outliers removed for evaluation as this is not
         data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
-        data.data = data.inverter_limit(2500, inv_list)
-    data.data = data.add_shift('P') #Shift after inv_limit, otherwise discrepancy
+        if transform:
+            data.data = data.PoA(latitude, longitude, tilt, azimuth) 
+            inv_list = [False, False, True] #Pre-processing only allowed for 
+            data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
+            data.data = data.inverter_limit(2500, inv_list)
+        data.data = data.add_shift('P') #Shift after inv_limit, otherwise discrepancy
+    else:
+        data.data = data.add_shift('P')
+        
 
     for i in range(len(data.data)): #We added this bcs now we merge on outer of indices but lot of missing day data, now we want to have accurate regression so we do like this
         data.data[i] = data.data[i].dropna()

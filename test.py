@@ -6,6 +6,6 @@ n_layers = 3
 n_nodes = 454
 optimizer_name = "Adam"
 hp = hyperparameters_source(optimizer_name, lr, n_layers, n_nodes, dropout, batch_size)
-hp.save(1)
+hp.save(2,1)
 
 

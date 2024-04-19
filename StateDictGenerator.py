@@ -12,20 +12,22 @@ ftr_file = "hyperparameters/features_"
 case= 2 #No weather cov
 if transfo in ["True", "true"]:
     transfo = True
-    ftr_file += "phys.pkl"
+    add_str = "phys.pkl"
     if dataset_name == "nwp":
           case=1
     elif dataset_name =="era5":
           case=6
 elif transfo in ["False", "false"]:
     transfo = False
-    ftr_file += "no_phys.pkl"
+    add_str = "no_phys.pkl"
     if dataset_name == "nwp":
           case=0
     elif dataset_name =="era5":
           case=5
 else:
     raise KeyError
+
+ftr_file += add_str
 
 source_dataset, _, _ = data_handeler(dataset_name, "nwp", "nwp", transfo)
 with open(ftr_file, 'rb') as f:
@@ -41,4 +43,4 @@ hp.gif_plotter = False
 hp.bd =True
 accuracy, state_dict = source(source_dataset, features, hp, scale)
 
-torch.save(state_dict, f"Models/source_{dataset_name}")
+torch.save(state_dict, f"Models/source_{dataset_name}_{add_str}")

@@ -9,11 +9,11 @@ import sys
 import pickle
 import optuna
 from functools import partial
-
+installation_id = "3437BD60"
 
 def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
     source_state_dict = None
-    source_data, target_data, _ = data_handeler(dataset_name, dataset_name, dataset_name, transfo)
+    source_data, target_data, _ = data_handeler(installation_id, dataset_name, dataset_name, dataset_name, transfo)
     if tuning_model == "source":
         from hyperparameters.OptunaSource import objective
         dataset = source_data
@@ -21,7 +21,12 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
         from hyperparameters.OptunaTa import objective
         dataset = target_data
         if TL:
-            source_state_dict = torch.load("Models/source")
+            str_file = f"Models/source_{dataset_name}"
+            if transfo:
+                str_file += 'phys'
+            else:
+                str_file += 'no_phys'
+            source_state_dict = torch.load(str_file)
 
     scale = Scale() #Load right scale
     scale.load(dataset_name)
