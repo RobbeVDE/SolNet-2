@@ -44,12 +44,14 @@ class hyperparameters_target():
                  dropout=None,
                  batch_size=None,
                  trial = None,
+                 bidirectional=False,
                  source_state_dict = None):
         self.trial = trial
         self.optimizer_name = optimizer_name
         self.source_state_dict = source_state_dict 
         self.lr = lr
         self.n_layers = n_layers
+        self.bd = bidirectional
         self.n_nodes = n_nodes
         self.dropout = dropout
         self.batch_size = batch_size
