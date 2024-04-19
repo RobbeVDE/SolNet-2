@@ -41,42 +41,40 @@ for i in models:
         match i:
             case 0:
                 phys = False
-                
-                with open("hyperparameters/features_no_phys.pkl", 'rb') as f:
-                    features = pickle.load(f)            
+                dataset_name = "nwp"           
                 hp.source_state_dict = torch.load("Models/source_nwp_no_phys")
             case 1:
                 phys = True           
-                with open("hyperparameters/features_phys.pkl", 'rb') as f:
-                    features = pickle.load(f)
+                dataset_name = "nwp"
                 hp.source_state_dict = torch.load("Models/source_nwp_phys")
             case 2:
-                features = ["P_24h_shift", "hour_sin", "hour_cos", "month_sin", "month_cos"]
+                dataset_name = "no_weather"
                 phys = False
                 hp.source_state_dict = torch.load("Models/source_no_weather")
             case 3:          
                 phys = False
-                source_state_dict = None
-                with open("hyperparameters/features_no_phys.pkl", 'rb') as f:
-                    features = pickle.load(f)
+                dataset_name = "nwp"
+                
             case 4:          
                 phys = True
-                source_state_dict = None
-                with open("hyperparameters/features_phys.pkl", 'rb') as f:
-                    features = pickle.load(f)
+                dataset_name = "nwp"
             case 5:
                 phys = False
-                with open("hyperparameters/features_no_phys.pkl", 'rb') as f:
-                    features = pickle.load(f)
+                dataset_name = "era5"
                 hp.source_state_dict = torch.load("Models/source_era5_no_phys")
             case 6:
                 phys = True
-                with open("hyperparameters/features_phys.pkl", 'rb') as f:
-                    features = pickle.load(f)
+                dataset_name ="era5"
                 hp.source_state_dict = torch.load("Models/source_era5_phys")
+        if phys:
+            phys_str = "phys.pkl"
+        else:
+            phys_str= "no_phys.pkl"    
         for j in sites:
             installation_id = instalid_list[j]
             _,_,eval_dataset = data_handeler(installation_id, "nwp", "nwp", "nwp", phys)
+            with open(f"hyperparameters/features_{dataset_name}_{phys_str}", 'rb') as f:
+                    features = pickle.load(f) 
             accur, timer = target(eval_dataset, features, hp, WFE = True)
             metric_processor(accur, timer, i,j)
 

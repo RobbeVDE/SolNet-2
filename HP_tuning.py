@@ -28,10 +28,36 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
                 str_file += 'no_phys'
             source_state_dict = torch.load(str_file)
 
+    ftr_file = "hyperparameters/features_"
+    if TL:
+        if transfo:
+            if dataset_name == 'nwp':
+                case=1
+            elif dataset_name =="era5":
+                case=5
+            
+            ftr_file += "phys.pkl"
+
+        else:
+            if dataset_name == 'nwp':
+                case = 0
+            elif dataset_name =="era5":
+                case=4
+            ftr_file += "no_phys.pkl"
+    else:
+        if transfo:
+            case=4
+        else:
+            case=3
+                    
+    if dataset_name == "no_weather":
+        case=2
+        ftr_file += "no_phys.pkl"
+
     scale = Scale() #Load right scale
     scale.load(dataset_name)
 
-    objective = partial(objective,  dataset = dataset, source_state_dict = source_state_dict, scale=scale, step=step)
+    objective = partial(objective,  dataset = dataset, source_state_dict = source_state_dict, scale=scale, step=step, case_n=case)
 
     optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 
@@ -61,31 +87,7 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
 
-        ftr_file = "hyperparameters/features_"
-        if TL:
-            if transfo:
-                if dataset_name == 'nwp':
-                    case=1
-                else:
-                    case=5
-                
-                ftr_file += f"phys.pkl"
-
-            else:
-                if dataset_name == 'nwp':
-                    case = 0
-                else:
-                    case=4
-                ftr_file += f"no_phys.pkl"
-        else:
-            if transfo:
-                case=4
-            else:
-                case=3
-
         
-        if dataset_name == "no_weather":
-            case=2
 
         print("Study statistics: ")
         print("  Number of finished trials: ", len(study.trials))

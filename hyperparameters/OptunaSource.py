@@ -7,10 +7,31 @@ from Data.Featurisation import data_handeler
 from hyperparameters.hyperparameters import hyperparameters_source
 from itertools import compress
 installation_id = "3437BD60"
-def objective(trial, dataset, source_state_dict, scale, step, case):
+def objective(trial, dataset, source_state_dict, scale, step, case_n):
 
     if step == 3:
-        with open("hyperparameters/features.pkl", 'rb') as f:
+        match case_n:
+            case 0:
+                phys = False
+                dataset_name = "nwp"           
+            case 1:
+                phys = True           
+                dataset_name = "nwp"
+            case 2:
+                dataset_name = "no_weather"
+                phys = False
+     
+            case 5:
+                phys = False
+                dataset_name = "era5"
+            case 6:
+                phys = True
+                dataset_name ="era5"
+        if phys:
+            phys_str = "phys.pkl"
+        else:
+            phys_str= "no_phys.pkl"    
+        with open(f"hyperparameters/features_{dataset_name}_{phys_str}", 'rb') as f:
             features = pickle.load(f)
     else:
         features = list(dataset.columns)
@@ -35,7 +56,7 @@ def objective(trial, dataset, source_state_dict, scale, step, case):
     else:
         hp = hyperparameters_source()
         hp.trial = trial
-        hp.load(case, 1)
+        hp.load(case_n, 1)
         if step == 2:
             sel_features = feature_selection(trial, features)
             features = list(compress(features, sel_features))
