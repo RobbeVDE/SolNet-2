@@ -28,7 +28,6 @@ elif transfo in ["False", "false"]:
           case=5
     elif dataset_name == "no_weather":
         case=2
-        add_str ="no_weather_no_phys.pkl"
 else:
     raise KeyError
 

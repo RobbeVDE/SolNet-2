@@ -21,7 +21,7 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
         from hyperparameters.OptunaTa import objective
         dataset = target_data
         if TL:
-            str_file = f"Models/source_{dataset_name}"
+            str_file = f"Models/source_{dataset_name}_"
             if transfo:
                 str_file += 'phys'
             else:
