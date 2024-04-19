@@ -106,6 +106,12 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
                 print("    {}: {}".format(key, value))
                 if value:
                     final_features.append(key)
+                    if "_sin" in key:
+                        key.replace("_sin","_cos") #Make sure both cyclical features are saved
+                        final_features.append(key)
+                    elif ("_cos" in key):
+                        key.replace("_cos","_sin")
+                        final_features.append(key)
 
             with open(ftr_file, 'wb') as f:
                 pickle.dump(final_features, f)

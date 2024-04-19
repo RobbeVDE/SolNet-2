@@ -10,6 +10,7 @@ installation_id = "3437BD60"
 def objective(trial, dataset, source_state_dict, scale, step, case_n):
 
     if step == 3:
+        phys_str=""
         match case_n:
             case 0:
                 phys = False
@@ -20,6 +21,7 @@ def objective(trial, dataset, source_state_dict, scale, step, case_n):
             case 2:
                 dataset_name = "no_weather"
                 phys = False
+                phys_str +="no_weather_"
      
             case 5:
                 phys = False
@@ -28,10 +30,10 @@ def objective(trial, dataset, source_state_dict, scale, step, case_n):
                 phys = True
                 dataset_name ="era5"
         if phys:
-            phys_str = "phys.pkl"
+            phys_str += "phys.pkl"
         else:
-            phys_str= "no_phys.pkl"    
-        with open(f"hyperparameters/features_{dataset_name}_{phys_str}", 'rb') as f:
+            phys_str += "no_phys.pkl"    
+        with open(f"hyperparameters/features_{phys_str}", 'rb') as f:
             features = pickle.load(f)
     else:
         features = list(dataset.columns)
