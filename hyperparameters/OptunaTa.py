@@ -11,7 +11,7 @@ import logging
 import pickle
 import sys
 installation_id = "3437BD60"
-def objective(trial, dataset, source_state_dict, scale, step):
+def objective(trial, dataset, source_state_dict, scale, step, case):
 
     if step == 3:
         with open("hyperparameters/features.pkl", 'rb') as f:

@@ -7,7 +7,7 @@ from Data.Featurisation import data_handeler
 from hyperparameters.hyperparameters import hyperparameters_source
 from itertools import compress
 installation_id = "3437BD60"
-def objective(trial, dataset, source_state_dict, scale, step):
+def objective(trial, dataset, source_state_dict, scale, step, case):
 
     if step == 3:
         with open("hyperparameters/features.pkl", 'rb') as f:
@@ -35,7 +35,7 @@ def objective(trial, dataset, source_state_dict, scale, step):
     else:
         hp = hyperparameters_source()
         hp.trial = trial
-        hp.load(1)
+        hp.load(case, 1)
         if step == 2:
             sel_features = feature_selection(trial, features)
             features = list(compress(features, sel_features))
