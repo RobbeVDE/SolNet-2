@@ -29,7 +29,7 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
             source_state_dict = torch.load(str_file)
 
     ftr_file = "hyperparameters/features_"
-    if TL:
+    if TL and (dataset_name != "no_weather"):
         if transfo:
             if dataset_name == 'nwp':
                 case=1
@@ -52,7 +52,7 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
                     
     if dataset_name == "no_weather":
         case=2
-        ftr_file += "no_phys.pkl"
+        ftr_file += "no_weather_no_phys.pkl"
 
     scale = Scale() #Load right scale
     scale.load(dataset_name)
@@ -79,6 +79,8 @@ def HP_tuning(tuning_model, dataset_name, transfo, TL, step):
     try:
         if step == 2:
             n_trials = 300
+            if case == 2: # no weather cov so only 8 possib
+                n_trials = 8
         elif step == 1:
             n_trials = 50
         else:

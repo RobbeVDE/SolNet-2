@@ -62,7 +62,8 @@ def objective(trial, dataset, source_state_dict, scale, step, case_n):
         if step == 2:
             sel_features = feature_selection(trial, features)
             features = list(compress(features, sel_features))
-        
+            if features == []:
+                return 100 # Just return high value
         else:
             optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
             lr = trial.suggest_loguniform("lr_source", hp.lr/100, hp.lr*100)
