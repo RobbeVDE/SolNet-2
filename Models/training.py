@@ -190,7 +190,7 @@ class Training:
         return min(avg_error), state_dict_list[argmin]
 
     def fit_cv(self):
-        fold_avg_test_loss = []
+        fold_min_test_loss = []
         best_loss = np.inf
         kfold = KFold(n_splits=3)
         for fold, (train_ids, test_ids) in enumerate(kfold.split(self.total_data)):
@@ -254,11 +254,11 @@ class Training:
                                                                                                     avg_test_error[epoch]))
             
             fold_argmin_test = avg_test_error.index(min(avg_test_error))
-            fold_avg_test_loss.append(avg_test_error[fold_argmin_test])
+            fold_min_test_loss.append(avg_test_error[fold_argmin_test])
 
-            if fold_avg_test_loss[-1] < best_loss:
+            if fold_min_test_loss[-1] < best_loss:
                 best_state_dict = state_dict_list[fold_argmin_test]
-                best_loss = fold_avg_test_loss[-1]
+                best_loss = fold_min_test_loss[-1]
             
 
             ### RESET WEIGHTS
@@ -266,7 +266,7 @@ class Training:
                 print('resetting ', name)
                 module.reset_parameters()
 
-            print(f'Best Epoch for fold{fold}: ' + str(fold_argmin_test))
+            print(f'Best Epoch for fold{fold}: ' + str(fold_argmin_test) +' with value: ' +str(fold_min_test_loss[-1]))
 
             plt.plot(avg_train_error, label='train error ' + str(self.months) + ' months')
             plt.plot(avg_test_error, label='test error ' + str(self.months) + ' months')
@@ -274,7 +274,7 @@ class Training:
 
         
         
-        avg_error = np.mean(fold_avg_test_loss)
+        avg_error = np.sqrt(np.mean(np.square(fold_min_test_loss)))
         print(f"Average error:{avg_error}")
         return avg_error, best_state_dict
 
