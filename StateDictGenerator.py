@@ -44,7 +44,7 @@ scale.load(dataset_name)
 hp = hyperparameters_source()
 hp.load(case,3)
 hp.gif_plotter = False
-hp.bd =True
+hp.bd =False
 accuracy, state_dict = source(source_dataset, features, hp, scale)
 
 torch.save(state_dict, f"Models/source_{dataset_name}_{add_str}")

@@ -48,7 +48,7 @@ def objective(trial, dataset, source_state_dict, scale, step, case_n):
     hp_source = hyperparameters_source()
     hp_source.load(case_n, 3)
     hp = hyperparameters_target(hp_source.optimizer_name,lr_target, hp_source.n_layers, hp_source.n_nodes, dropout, 
-                                batch_size_target, trial, source_state_dict)
+                                batch_size_target, trial,source_state_dict= source_state_dict)
 
     accuracy = target(dataset, features, hp, scale, WFE=True)
 
