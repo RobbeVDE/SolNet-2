@@ -5,7 +5,9 @@ from scale import Scale
 import torch
 import pickle
 #### Model parameters
-
+installation_int = int(input("Specify site: 0. 3437DB60 \n 1. ... \n 2. .... \n"))
+install_id_list = ["3437BD60"]
+installation_id = install_id_list[installation_int]
 dataset_name = str(input("Dataset: Enter nwp, era5 or no_weather \n"))
 transfo = str(input("Use phys transfo: Enter True or False \n"))
 ftr_file = "hyperparameters/features_"
@@ -24,12 +26,15 @@ elif transfo in ["False", "false"]:
           case=0
     elif dataset_name =="era5":
           case=5
+    elif dataset_name == "no_weather":
+        case=2
+        add_str ="no_weather_no_phys.pkl"
 else:
     raise KeyError
 
 ftr_file += add_str
 
-source_dataset, _, _ = data_handeler(dataset_name, "nwp", "nwp", transfo)
+source_dataset, _, _ = data_handeler(installation_id, dataset_name, "nwp", "nwp", transfo)
 with open(ftr_file, 'rb') as f:
             features = pickle.load(f)
 
@@ -38,7 +43,7 @@ scale = Scale()
 scale.load(dataset_name)
 
 hp = hyperparameters_source()
-hp.load(3)
+hp.load(case,3)
 hp.gif_plotter = False
 hp.bd =True
 accuracy, state_dict = source(source_dataset, features, hp, scale)
