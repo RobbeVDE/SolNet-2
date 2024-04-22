@@ -17,7 +17,7 @@ total_df = pd.DataFrame()
 
 
 # Define the local directory name to put data in
-ddir="C:/Users/Robbe/PycharmProjects/SolNet 2/UK"
+ddir="/users/students/r0778797/SolNet-2/UK"
 
 # If directory doesn't exist make it
 if not os.path.isdir(ddir):
@@ -64,7 +64,18 @@ for year in range(2016,2022):
                     df.load()
                     df = df.sel(latitude=latitude,longitude= longitude, method="nearest").to_dataframe()
                     os.remove(file)
-                    os.remove(f'{file}.923a8.idx') # Some sort of database file that Windows automatically generates
+                    try:
+                        os.remove(f'{file}.923a8.idx') # Some sort of database file that Windows automatically generates
+                    except:
+                        pass
+                    print(df)
+                    df.set_index("valid_time", inplace=True)
+                    end_day = int(day)+1
+                    pred_time = f"{year}-{month}-{day}"
+                    df = df[pred_time:pred_time]
+                    df = df.iloc[:,-1] #last column is actual variable, others are mjeh
+                    df.name = var
+                    print(f'-----{time.time()-start_timing} seconds----')
                 except:
                     print(f"Not able to retriece the data for {var} ar {day}/{month}/{year}")
                     df_dict = {var: [np.nan]*23}
@@ -72,14 +83,7 @@ for year in range(2016,2022):
                     df = pd.DataFrame(df_dict, index=index)
 
                 #make dataframe
-                df.set_index("valid_time", inplace=True)
-                end_day = int(day)+1
-                pred_time = f"{year}-{month}-{day}"
-                df = df[pred_time:pred_time]
-                df = df.iloc[:,-1] #last column is actual variable, others are mjeh
-                df.name = var
                 day_df = day_df.join(df, how="right")
-                print(f'-----{time.time()-t0} seconds----')
 
                 # Make month and day integers again
                 day = int(day)
