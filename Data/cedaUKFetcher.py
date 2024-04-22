@@ -75,7 +75,7 @@ for year in range(2016,2022):
                     df = df[pred_time:pred_time]
                     df = df.iloc[:,-1] #last column is actual variable, others are mjeh
                     df.name = var
-                    print(f'-----{time.time()-start_timing} seconds----')
+                    print(f'-----{time.time()-t0} seconds----')
                 except:
                     print(f"Not able to retriece the data for {var} ar {day}/{month}/{year}")
                     df_dict = {var: [np.nan]*23}
