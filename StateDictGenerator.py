@@ -31,7 +31,10 @@ elif transfo in ["False", "false"]:
 else:
     raise KeyError
 
-ftr_file += add_str
+ftr_string = add_str
+if case == 2: #Here we have independent features
+    ftr_string = "no_weather_"+ftr_string
+ftr_file += ftr_string
 
 source_dataset, _, _ = data_handeler(installation_id, dataset_name, "nwp", "nwp", transfo)
 with open(ftr_file, 'rb') as f:
