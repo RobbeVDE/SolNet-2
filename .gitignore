@@ -6,6 +6,7 @@ __pycache__/
 # Ignore keys file
 .env
 
+*.parquet
 # C extensions
 *.so
 

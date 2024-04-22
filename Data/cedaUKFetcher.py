@@ -2,6 +2,7 @@ from ftplib import FTP
 import os
 import xarray as xr
 import time
+import numpy as np
 import pandas as pd
 # Important libraries
 import os
@@ -9,9 +10,9 @@ from dotenv import load_dotenv
 # Load secret .env file
 load_dotenv()
 
-latitude = 9.93676
-longitude = -84.04388 
-variables = ["temperature_1_5m", "relative_humidity_1_5m","total_cloud","wind_u_10m","wind_v_10m", "downward_surface_SW_flux", "direct_surface_SW_flux", "diffuse_surface_SW_flux", "mean_sea_level_pressure"]
+latitude, longitude = 53.4,-2.91
+
+variables = ["temperature_1_5m", "relative_humidity_1_5m","total_cloud_amount","wind_u_10m","wind_v_10m", "downward_surface_SW_flux", "direct_surface_SW_flux", "diffuse_surface_SW_flux", "pressure_MSL"]
 total_df = pd.DataFrame()
 
 
@@ -27,7 +28,7 @@ os.chdir(ddir)
 
 f=FTP("ftp.ceda.ac.uk", os.getenv('ceda_usrname'), os.getenv('ceda_pssword'))
 # loop through years
-for year in range(2016,2021):
+for year in range(2016,2022):
     if year == 2016: #Only some months present
         month_range = range(5,13)
     else:
@@ -52,29 +53,33 @@ for year in range(2016,2021):
                     day = "0" + str(day)
                 if month < 10:
                     month = "0" + str(month)
-                f.cwd(f"/badc/ukmo-nwp/data/euro4-grib/{year}/{month}/{day}")
-                # define filename
-                file=f"{year}{month}{day}00_WSEuro4_{var}_001054.grib"
-                # get the remote file to the local directory
-                start_timing = time.time()
-                f.retrbinary("RETR %s" % file, open(file, "wb").write)
-                df = xr.load_dataset(file, engine='cfgrib')
-                df.load()
-                df = df.sel(latitude=latitude,longitude= longitude, method="nearest").to_dataframe()
-                os.remove(file)
-                os.remove(f'{file}.923a8.idx') # Some sort of database file that Windows automatically generates
+                try:
+                    f.cwd(f"/badc/ukmo-nwp/data/euro4-grib/{year}/{month}/{day}")
+                    # define filename
+                    file=f"{year}{month}{day}00_WSEuro4_{var}_001054.grib"
+                    # get the remote file to the local directory
+                    t0 = time.time()
+                    f.retrbinary("RETR %s" % file, open(file, "wb").write)
+                    df = xr.load_dataset(file, engine='cfgrib')
+                    df.load()
+                    df = df.sel(latitude=latitude,longitude= longitude, method="nearest").to_dataframe()
+                    os.remove(file)
+                    os.remove(f'{file}.923a8.idx') # Some sort of database file that Windows automatically generates
+                except:
+                    print(f"Not able to retriece the data for {var} ar {day}/{month}/{year}")
+                    df_dict = {var: [np.nan]*23}
+                    index= pd.date_range(f"{year}-{month}-{day} 01:00", f"{year}-{month}-{day} 23:00", freq='h')
+                    df = pd.DataFrame(df_dict, index=index)
 
                 #make dataframe
                 df.set_index("valid_time", inplace=True)
                 end_day = int(day)+1
                 pred_time = f"{year}-{month}-{day}"
                 df = df[pred_time:pred_time]
-                print(df)
                 df = df.iloc[:,-1] #last column is actual variable, others are mjeh
                 df.name = var
                 day_df = day_df.join(df, how="right")
-                print(day_df)
-                print(f'-----{time.time()-start_timing} seconds----')
+                print(f'-----{time.time()-t0} seconds----')
 
                 # Make month and day integers again
                 day = int(day)
@@ -82,7 +87,8 @@ for year in range(2016,2021):
             
             #Merge day to total dataframe
             total_df = pd.concat([total_df, day_df])
-            total_df.to_pickle("CEDA_data_NL.pickle")
+            total_df.to_pickle("CEDA_data_UK.pickle")
+            print(f"Currently at {day}/{month}/{year}")
     total_df.to_pickle(f"CEDA_backup_{year}")
         
 f.close()
