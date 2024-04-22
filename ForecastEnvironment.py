@@ -23,7 +23,6 @@ from Models import models as md
 import pickle
 instalid_list = ["3437BD60"]
 inv_powers = [2500]
-model_options_list = [(True, False, )]
 rmse = pd.DataFrame()
 timer = pd.DataFrame()
 ctn_eval = False #Loop trough all models and sites

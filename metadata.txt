@@ -1,0 +1,10 @@
+*PV plant specifications*
+Installation type: rooftop PV system
+PV module type: 17 x Canadian solar CS6U-325P (325 Wp)
+Inverter: SolarEdge SE7600A-US 240V
+Power optimizer: Each module has a DC/DC SolarEdge P400 worldwide power optimizer
+Location: EIE, UCR, San Jose, Costa Rica, 9.93676, -84.04388
+PV array orientation: 90°
+PV array inclination: 8.5°
+
+The data has been aggregated per year and month, being the months in Spanish.

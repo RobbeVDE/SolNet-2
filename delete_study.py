@@ -2,7 +2,7 @@ import optuna
 import os
 
 tuning_model = str(input("Tuning Model: Enter source or target \n"))  # Unique identifier of the study.
-dataset_name = str(input("Dataset: Enter nwp or era5 \n"))
+dataset_name = str(input("Dataset: Enter nwp, era5 or no_weather\n"))
 transfo = str(input("Use phys transfo: Enter True or False \n"))
 
 if transfo in ["True", "true"]:

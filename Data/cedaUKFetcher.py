@@ -8,15 +8,15 @@ import os
 from dotenv import load_dotenv
 # Load secret .env file
 load_dotenv()
-start_timing = time.time()
-latitude = 51.0
-longitude = 5.54
-variables = ["temperature_1_5m", "relative_humidity_1_5m","total_cloud_amount","wind_u_10m","wind_v_10m","diffuse_surface_SW_flux","direct_surface_SW_flux", "downward_surface_SW_flux", "pressure_MSL"]
+
+latitude = 9.93676
+longitude = -84.04388 
+variables = ["temperature_1_5m", "relative_humidity_1_5m","total_cloud","wind_u_10m","wind_v_10m", "downward_surface_SW_flux", "direct_surface_SW_flux", "diffuse_surface_SW_flux", "mean_sea_level_pressure"]
 total_df = pd.DataFrame()
 
 
 # Define the local directory name to put data in
-ddir="C:/Users/Robbe/PycharmProjects/SolNet 2/CEDA"
+ddir="C:/Users/Robbe/PycharmProjects/SolNet 2/UK"
 
 # If directory doesn't exist make it
 if not os.path.isdir(ddir):
@@ -27,9 +27,9 @@ os.chdir(ddir)
 
 f=FTP("ftp.ceda.ac.uk", os.getenv('ceda_usrname'), os.getenv('ceda_pssword'))
 # loop through years
-for year in range(2016,2017):
+for year in range(2016,2021):
     if year == 2016: #Only some months present
-        month_range = range(7,8)
+        month_range = range(5,13)
     else:
         month_range = range(1,13)
     # loop through months
@@ -40,10 +40,10 @@ for year in range(2016,2017):
             ndays=29
         else:
             ndays=int("dummy 31 28 31 30 31 30 31 31 30 31 30 31".split()[month])
-        if (year==2016) and (month==7):
-            start_day = 14
+        if (year==2016) and (month==3):
+            start_day = 1
         # loop through days
-        for day in range(14, 15):
+        for day in range(start_day,ndays+1):
             day_df = pd.DataFrame()
                 # loop through variables
             for var in variables:
@@ -56,6 +56,7 @@ for year in range(2016,2017):
                 # define filename
                 file=f"{year}{month}{day}00_WSEuro4_{var}_001054.grib"
                 # get the remote file to the local directory
+                start_timing = time.time()
                 f.retrbinary("RETR %s" % file, open(file, "wb").write)
                 df = xr.load_dataset(file, engine='cfgrib')
                 df.load()
@@ -81,7 +82,7 @@ for year in range(2016,2017):
             
             #Merge day to total dataframe
             total_df = pd.concat([total_df, day_df])
-            total_df.to_pickle("CEDA_data_NL2.pickle")
+            total_df.to_pickle("CEDA_data_NL.pickle")
     total_df.to_pickle(f"CEDA_backup_{year}")
         
 f.close()
