@@ -157,11 +157,21 @@ class Featurisation:
     
 
     
-def data_handeler(installation_id = "3437BD60", source=None, target=None, eval=None, transform = True, month_source=False):
+def data_handeler(installation_int = 0, source=None, target=None, eval=None, transform = True, month_source=False):
     """
     Add explation, maybe more general power function if we use more test setups
     RETURNS source data, target_data, eval_data
     """
+    #Metadata
+    metadata = pd.read_pickle("Data/Sites/metadata.pkl")
+    metadata = metadata.loc[installation_int]
+    peakPower = metadata['Installed ¨Power']
+    tilt = metadata['Tilt']
+    azimuth = metadata['Azimuth']
+    lat = metadata['Latitude']
+    lon = metadata['Longitude']
+
+
     #Month ranges, maybe option to specify this with function
     if month_source:   
         source_range = pd.date_range("2018-08-01", "2018-08-31 23:00", freq='h', tz="UTC")
@@ -178,7 +188,7 @@ def data_handeler(installation_id = "3437BD60", source=None, target=None, eval=N
         print("In Google Colab environment: Using .csv files")
     except:
         IN_COLAB = False
-        print("Not in Colab environment: Using .pickle files")
+        print("Not in Colab environment: Using .pkl files")
     
     
     #Data intakeer
@@ -212,19 +222,7 @@ def data_handeler(installation_id = "3437BD60", source=None, target=None, eval=N
     openmeteo = openmeteo.rename(columns=meteo2CEDA)
 
     #NL production data
-    prodNL = pd.read_parquet('Data/production.parquet', engine='pyarrow')
-    metadata = pd.read_csv("Data/installations Netherlands.csv", sep=';')
-    metadata = metadata.set_index('id')
-    metadata_id = metadata.loc[installation_id]
-    tilt = metadata_id["Tilt"]
-    peakPower = metadata_id["Watt Peak"]
-    azimuth = metadata_id["Orientation"]
-    latitude = metadata_id["Latitude"]
-    longitude = metadata_id["Longitude"]
-    power = prodNL.loc[installation_id]
-    power = target_renamer(power, 'watt')
-    power = power.resample('h').sum()/4
-    power = power.tz_localize('UTC')
+    
 
     #Merge right data to have source, target and eval dataset
     list = [eval, target, source]
@@ -257,7 +255,7 @@ def data_handeler(installation_id = "3437BD60", source=None, target=None, eval=N
         outlier_list = [False, True, True] #No outliers removed for evaluation as this is not
         data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
         if transform:
-            data.data = data.PoA(latitude, longitude, tilt, azimuth) 
+            data.data = data.PoA(lat, lon, tilt, azimuth) 
             inv_list = [False, False, True] #Pre-processing only allowed for 
             data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
             data.data = data.inverter_limit(2500, inv_list)

@@ -9,12 +9,17 @@ cache_session = requests_cache.CachedSession('.cache', expire_after = -1)
 retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
 openmeteo = openmeteo_requests.Client(session = retry_session)
 
+install_int = 3
+metadata = pd.read_pickle("Data/Sites/metadata.pkl")
+metadata = metadata.iloc[install_int]
+lat = metadata['Latitude']
+lon = metadata['Longitude']
 # Make sure all required weather variables are listed here
 # The order of variables in hourly or daily is important to assign them correctly below
 url = "https://archive-api.open-meteo.com/v1/archive"
 params = {
-	"latitude": 52.0292,
-	"longitude": 5.0806,
+	"latitude": lat,
+	"longitude": lon,
 	"start_date": "2016-05-01",
 	"end_date": "2022-12-31",
 	"hourly": "is_day"
@@ -43,4 +48,4 @@ hourly_data["is_day"] = hourly_is_day
 hourly_dataframe = pd.DataFrame(data = hourly_data)
 hourly_dataframe.set_index('date', inplace=True)
 print(hourly_dataframe["2016-05-01 03:00":"2016-05-01 09:00"])
-hourly_dataframe.to_pickle('Data/is_day.pickle')
+hourly_dataframe.to_pickle(f'Data/Sites/is_day_{install_int}.pkl')
