@@ -14,6 +14,7 @@ class PVgis:
                  tilt,
                  azimuth,
                  peak_power,
+                 raddatabase=None,
                  end=None,
                  optimalangles=0):
         """
@@ -27,18 +28,31 @@ class PVgis:
         """
         self.URL = 'https://re.jrc.ec.europa.eu/api/v5_2/seriescalc'
         LOSS = 14
-
-        self.params = {'lat': latitude, 'lon': longitude,
-                       'startyear': start,
-                       'endyear': end,
-                       'outputformat': 'json',
-                       'angle': tilt, 'aspect': azimuth,
-                       'optimalangles': optimalangles,
-                       'pvcalculation': 1,
-                       'components': 1,
-                       'peakpower': peak_power,
-                       'loss': LOSS,
-                       'localtime': 0}
+        if raddatabase is None:
+            self.params = {'lat': latitude, 'lon': longitude,
+                        'startyear': start,
+                        'endyear': end,
+                        'outputformat': 'json',
+                        'angle': tilt, 'aspect': azimuth,
+                        'optimalangles': optimalangles,
+                        'pvcalculation': 1,
+                        'components': 1,
+                        'peakpower': peak_power,
+                        'loss': LOSS,
+                        'localtime': 0}
+        else:
+             self.params = {'lat': latitude, 'lon': longitude,
+                        'startyear': start,
+                        'endyear': end,
+                        'raddatabase' : raddatabase,
+                        'outputformat': 'json',
+                        'angle': tilt, 'aspect': azimuth,
+                        'optimalangles': optimalangles,
+                        'pvcalculation': 1,
+                        'components': 1,
+                        'peakpower': peak_power,
+                        'loss': LOSS,
+                        'localtime': 0}
 
     def get_pvgis_hourly(self):
         """

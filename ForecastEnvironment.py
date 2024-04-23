@@ -7,15 +7,15 @@ Program to simulate all models and RQ and assess them on 3 metrics: RMSE, time a
     - target(no S, no phys))    | - biLSTM              | - ARIMA ??
 
 2. Specify site:
-    - 34DB760
-    - 
-    - 
+    - NL 1          | UK
+    - NL 2          |
+    - Costa Rica    |
 
 """
 from Data.Featurisation import data_handeler
 import torch
 import pandas as pd
-import hyperparameters.hyperparameters
+from  hyperparameters import hyperparameters
 from evaluation.metric_processor import metric_processor
 from Models.models import target
 import numpy as np
@@ -28,10 +28,10 @@ timer = pd.DataFrame()
 ctn_eval = False #Loop trough all models and sites
 if ctn_eval:
     models = range(9)
-    sites = range(3)
+    sites = range(4)
 else:
     models = [int(input("Specify model:\n 0. TL(no phys)               | 4. target(no S, phys)) | 8. physical \n 1. TL(phys)                  | 5. TL(era5, no phys)   | 9. persistence \n 2. TL(no weather cov)        | 6. TL(era5, phys)      | 10. CNN-LSTM ?? \n 3. target(no S, no phys))    | 7. biLSTM              | 11. ARIMA ?? \n"))]
-    sites = [int(input("Specify site: 0. 3437DB60 \n 1. ... \n 2. .... \n"))]
+    sites = [int(input("Specify site: \n 0. NL 1       | 3. UK \n 1. NL 2        |   \n 2. Costa Rica  | \n"))]
 
 for i in models:
     if i <= 5:
@@ -49,7 +49,7 @@ for i in models:
             case 2:
                 dataset_name = "no_weather"
                 phys = False
-                hp.source_state_dict = torch.load("Models/source_no_weather")
+                hp.source_state_dict = torch.load("Models/source_no_weather_no_phys")
             case 3:          
                 phys = False
                 dataset_name = "nwp"
@@ -70,8 +70,7 @@ for i in models:
         else:
             phys_str= "no_phys.pkl"    
         for j in sites:
-            installation_id = instalid_list[j]
-            _,_,eval_dataset = data_handeler(installation_id, "nwp", "nwp", "nwp", phys)
+            _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", phys)
             with open(f"hyperparameters/features_{dataset_name}_{phys_str}", 'rb') as f:
                     features = pickle.load(f) 
             accur, timer = target(eval_dataset, features, hp, WFE = True)
@@ -81,17 +80,15 @@ for i in models:
         match i:
             case 9:
                 for j in sites:
-                    installation_id = instalid_list[j]
-                    _,_,eval_dataset = data_handeler(installation_id, "nwp", "nwp", "nwp", True)
+                    _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", True)
                     accur, timer = md.persistence(eval_dataset)
                     metric_processor(accur, timer, i,j)
             case 8:
                 for j in sites:
-                    installation_id = instalid_list[j]
-                    _,_,eval_dataset = data_handeler(installation_id, "nwp", "nwp", "nwp", True)
-                    metadata = pd.read_csv("Data/installations Netherlands.csv", sep=';')
+                    _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", True)
+                    metadata = pd.read_pickle("Data/sites/metadata.pkl")
                     metadata = metadata.set_index('id')
-                    metadata_id = metadata.loc[installation_id]
+                    metadata_id = metadata.loc[j]
                     tilt = metadata_id["Tilt"]
                     peakPower = metadata_id["Watt Peak"]
                     azimuth = metadata_id["Orientation"]

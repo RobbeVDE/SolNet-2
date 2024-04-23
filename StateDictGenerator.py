@@ -5,38 +5,48 @@ from scale import Scale
 import torch
 import pickle
 #### Model parameters
-installation_int = int(input("Specify site: 0. 3437DB60 \n 1. ... \n 2. .... \n"))
-install_id_list = ["3437BD60"]
-installation_id = install_id_list[installation_int]
-dataset_name = str(input("Dataset: Enter nwp, era5 or no_weather \n"))
-transfo = str(input("Use phys transfo: Enter True or False \n"))
-ftr_file = "hyperparameters/features_"
-case= 2 #No weather cov
-if transfo in ["True", "true"]:
-    transfo = True
-    add_str = "phys.pkl"
-    if dataset_name == "nwp":
-          case=1
-    elif dataset_name =="era5":
-          case=6
-elif transfo in ["False", "false"]:
-    transfo = False
-    add_str = "no_phys.pkl"
-    if dataset_name == "nwp":
-          case=0
-    elif dataset_name =="era5":
-          case=5
-    elif dataset_name == "no_weather":
-        case=2
+installation_int = int(input("Specify site: \n 0. NL 1       | 3. UK \n 1. NL 2       \n 2. Costa Rica   \n"))
+model = int(input("Specify model:\n 0. TL(no phys)               | 4. target(no S, phys)) |  \n 1. TL(phys)                  | 5. TL(era5, no phys)   |  \n 2. TL(no weather cov)        | 6. TL(era5, phys)      | 10. CNN-LSTM ?? \n 3. target(no S, no phys))    | 7. biLSTM              | \n"))
+        
+TL = True
+match model:
+        case 0:
+            phys = False
+            dataset_name = "nwp"           
+        case 1:
+            phys = True           
+            dataset_name = "nwp"
+        case 2:
+            dataset_name = "no_weather"
+            phys = False
+        case 3:          
+            phys = False
+            dataset_name = "nwp"
+            TL = False
+        case 4:          
+            phys = True
+            dataset_name = "nwp"
+            TL = False
+        case 5:
+            phys = False
+            dataset_name = "era5"
+        case 6:
+            phys = True
+            dataset_name ="era5"
+source_data, target_data, _ = data_handeler(installation_int, dataset_name, "nwp", "nwp", phys)
+if phys:
+    phys_str = "phys.pkl"
 else:
-    raise KeyError
+    phys_str= "no_phys.pkl"    
 
-ftr_string = add_str
-if case == 2: #Here we have independent features
-    ftr_string = "no_weather_"+ftr_string
-ftr_file += ftr_string
 
-source_dataset, _, _ = data_handeler(installation_id, dataset_name, "nwp", "nwp", transfo)
+ftr_file = "hyperparameters/features_"
+if model == 2:#NO weather features
+    ftr_file += "no_weather_"
+ftr_file += phys_str
+
+
+
 with open(ftr_file, 'rb') as f:
             features = pickle.load(f)
 
@@ -45,9 +55,9 @@ scale = Scale()
 scale.load(dataset_name)
 
 hp = hyperparameters_source()
-hp.load(case,3)
+hp.load(model,3)
 hp.gif_plotter = False
 hp.bd =False
-accuracy, state_dict = source(source_dataset, features, hp, scale)
+accuracy, state_dict = source(source_data, features, hp, scale)
 
-torch.save(state_dict, f"Models/source_{dataset_name}_{add_str}")
+torch.save(state_dict, f"Models/source_{dataset_name}_{phys_str}")

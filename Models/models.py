@@ -235,7 +235,7 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
         mse.append(np.mean(np.square(y_f_mse-y_t_mse)))
         print(f"Currently in month {i}. MSE for this month is: {mse[-1]}")
         if hp.trial is not None:
-            hp.trial.report(mse, i)
+            hp.trial.report(mse[-1], i)
             if hp.trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
         if i != len(X_test)-1:

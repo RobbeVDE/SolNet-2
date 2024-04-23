@@ -114,13 +114,24 @@ class Featurisation:
             times = self.data[i].index
             solar_position = site.get_solarposition(times=times)
             ghi = self.data[i][GHI_name]
-            dhi = self.data[i][DHI_name]
-            dni = self.data[i][DNI_name]
+            pres = self.dtaa[i]['pressure_MSL']
             dni_extra = irradiance.get_extra_radiation(times)
+            try:
+                dhi = self.data[i][DHI_name]
+                dni = self.data[i][DNI_name]
+            except KeyError: #Meaning DNI and DHI are not yet present, ie UKV:Global add them also to dataframe
+                out_erbs = irradiance.erbs(ghi, solar_position.zenith, times)
+                dhi = out_erbs['dhi']
+                dni = out_erbs['dni']
+                self.data[i][DHI_name] = dhi
+                self.data[i][DNI_name] = dni
+            
             POA_irrad = irradiance.get_total_irradiance(surface_tilt=tilt, surface_azimuth=azimuth, 
                                                         dni=dni, ghi=ghi, dhi=dhi, solar_zenith=solar_position['apparent_zenith'],
                                                         dni_extra=dni_extra, model='perez',solar_azimuth=solar_position['azimuth'])
             self.data[i]['PoA'] = POA_irrad['poa_global'].fillna(0)
+            
+
 
         return self.data
     
@@ -165,7 +176,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
     #Metadata
     metadata = pd.read_pickle("Data/Sites/metadata.pkl")
     metadata = metadata.loc[installation_int]
-    peakPower = metadata['Installed ¨Power']
+    peakPower = metadata['Installed Power']
     tilt = metadata['Tilt']
     azimuth = metadata['Azimuth']
     lat = metadata['Latitude']
@@ -202,12 +213,13 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         is_day = pd.read_csv("Data/is_day.csv", parse_dates=True)
         # is_day.index = pd.to_datetime(is_day.index, parse_dates=True)
     else:
-        openmeteo = pd.read_pickle("Data/openmeteo.pickle")
+        openmeteo = pd.read_pickle(f"Data/Sites/Reanalysis_{installation_int}.pkl")
 
-        pvgis = pd.read_pickle('Data/PVGIS.pickle')
+        pvgis = pd.read_pickle(f"Data/Sites/PVGIS_{installation_int}.pkl")
 
-        ceda = pd.read_pickle("CEDA_dataNL.pickle")
-        is_day = pd.read_pickle("Data/is_day.pickle")
+        ceda = pd.read_pickle(f"Data/Sites/NWP_{installation_int}.pkl")
+        is_day = pd.read_pickle(f"Data/Sites/is_day_{installation_int}.pkl")
+        power = pd.read_pickle(f"Data/Sites/PV_{installation_int}.pkl")
 
     meteo2CEDA = {'temperature_2m' :'temperature_1_5m', 
                 "relative_humidity_2m":"relative_humidity_1_5m", 

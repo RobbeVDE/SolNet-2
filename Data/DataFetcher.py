@@ -16,6 +16,7 @@ class DataFetcher:
             azimuth,
             locations=1,
             start_date=2005,
+            raddatabase = None,
             end_date=None,
             optimal_angles=None,
             km_radius=50,  # The radius around the actual location to find additional locations
@@ -40,7 +41,7 @@ class DataFetcher:
         self.gaus_radius = gaus_radius
         self.precision = precision
 
-        self.pv = pvgis.PVgis(latitude, longitude, start_date, tilt, azimuth, peakPower, end=end_date,
+        self.pv = pvgis.PVgis(latitude, longitude, start_date, tilt, azimuth, peakPower, raddatabase=raddatabase, end=end_date,
                               optimalangles=optimal_angles)
 
         self.dataset = self._data_gathering(latitude, longitude, locations=locations)

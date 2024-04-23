@@ -58,7 +58,9 @@ latitude = 9.93676
 longitude = -84.04388
 
 metadata_df.iloc[2,:] = ["Costa Rica", peakPower, tilt, azimuth, latitude, longitude]
-
+power = pd.read_pickle('Data/CostaRica.pkl')
+power = target_renamer(power, 'Solar Production (W)')
+power.to_pickle("Data/Sites/PV_2.pkl")
 
 # 3.
 installation_id = 26855
@@ -70,17 +72,8 @@ azimuth = metadata.loc[installation_id,"orientation"]-180 # To bring in desired 
 latitude = metadata.loc[installation_id,"latitude_rounded"]
 longitude = metadata.loc[installation_id,"longitude_rounded"]
 
-total_df = pd.DataFrame()
-j=0
-parquet_file = pq.ParquetFile('UK/30min.parquet')
-for i in parquet_file.iter_batches(batch_size=1e7):
-    if j %100 == 0:
-        print('One step further.')
-    df = i.to_pandas()
-    df = df[df['ss_id'] == installation_id]
-    total_df = pd.concat([total_df, df])
-    j += 1
-print(total_df)
+total_df = pd.read_pickle("UK/ProdUK.pkl")
+
 total_df['datetime'] = pd.to_datetime(total_df['datetime'])
 total_df = total_df.set_index('datetime')
 total_df = total_df.drop('ss_id', axis=1)
