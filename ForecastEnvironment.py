@@ -41,15 +41,15 @@ for i in models:
             case 0:
                 phys = False
                 dataset_name = "nwp"           
-                hp.source_state_dict = torch.load("Models/source_nwp_no_phys")
+                hp.source_state_dict = torch.load(f"Models/source/nwp_{j}no_phys.pkl")
             case 1:
                 phys = True           
                 dataset_name = "nwp"
-                hp.source_state_dict = torch.load("Models/source_nwp_phys")
+                hp.source_state_dict = torch.load(f"Models/source/nwp_{j}_phys.pkl")
             case 2:
                 dataset_name = "no_weather"
                 phys = False
-                hp.source_state_dict = torch.load("Models/source_no_weather_no_phys")
+                hp.source_state_dict = torch.load(f"Models/source/no_weather_{j}_no_phys.pkl")
             case 3:          
                 phys = False
                 dataset_name = "nwp"
@@ -60,11 +60,11 @@ for i in models:
             case 5:
                 phys = False
                 dataset_name = "era5"
-                hp.source_state_dict = torch.load("Models/source_era5_no_phys")
+                hp.source_state_dict = torch.load(f"Models/source/era5_{j}_no_phys.pkl")
             case 6:
                 phys = True
                 dataset_name ="era5"
-                hp.source_state_dict = torch.load("Models/source_era5_phys")
+                hp.source_state_dict = torch.load(f"Models/source/era5_{j}_phys.pkl")
         if phys:
             phys_str = "phys.pkl"
         else:

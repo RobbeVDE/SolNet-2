@@ -60,4 +60,4 @@ hp.gif_plotter = False
 hp.bd =False
 accuracy, state_dict = source(source_data, features, hp, scale)
 
-torch.save(state_dict, f"Models/source_{dataset_name}_{phys_str}")
+torch.save(state_dict, f"Models/source/{dataset_name}_{installation_int}_{phys_str}")

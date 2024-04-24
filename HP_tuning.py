@@ -9,7 +9,7 @@ import sys
 import pickle
 import optuna
 from functools import partial
-
+installation_int = 0 # HP tuning is done with data for the first NL site
 def HP_tuning(domain, model, step):
     source_state_dict = None
     TL = True
@@ -37,7 +37,7 @@ def HP_tuning(domain, model, step):
             case 6:
                 phys = True
                 dataset_name ="era5"
-    source_data, target_data, _ = data_handeler(0, dataset_name, "nwp", "nwp", phys)
+    source_data, target_data, _ = data_handeler(installation_int, dataset_name, "nwp", "nwp", phys)
     if phys:
         phys_str = "phys.pkl"
     else:
@@ -49,7 +49,7 @@ def HP_tuning(domain, model, step):
         from hyperparameters.OptunaTa import objective
         dataset = target_data
         if TL:  
-            source_state_file = f"Models/source_{dataset_name}_"
+            source_state_file = f"Models/source/{dataset_name}_{installation_int}_"
             source_state_file += phys_str          
             source_state_dict = torch.load(source_state_file)
 
