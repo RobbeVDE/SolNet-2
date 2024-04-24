@@ -1,34 +1,57 @@
 import optuna
 import os
 
-tuning_model = str(input("Tuning Model: Enter source or target \n"))  # Unique identifier of the study.
-dataset_name = str(input("Dataset: Enter nwp, era5 or no_weather\n"))
-transfo = str(input("Use phys transfo: Enter True or False \n"))
-
-if transfo in ["True", "true"]:
-    transfo = True
-elif transfo in ["False", "false"]:
-    transfo = False
-else:
-    raise KeyError
-
-TL = str(input("TL case: Enter True or False \n"))
-if TL in ["True", "true"]:
-    TL = True
-elif TL in ["False", "false"]:
-    TL = False
-else:
-    raise KeyError
+model = int(input("Specify model:\n 0. TL(no phys)               | 4. target(no S, phys)) |  \n 1. TL(phys)                  | 5. TL(era5, no phys)   |  \n 2. TL(no weather cov)        | 6. TL(era5, phys)      | 10. CNN-LSTM ?? \n 3. target(no S, no phys))    | 7. biLSTM              | \n"))
+domain = str(input("Domain: Enter source or target \n"))  # Unique identifier of the study.
 step = int(input("Select step in optimization: \n 1: Initial HP \n 2: Feature Selection \n 3: Complete HP \n"))
 
+match model:
+            case 0:
+                phys = False
+                dataset_name = "nwp"           
+            case 1:
+                phys = True           
+                dataset_name = "nwp"
+            case 2:
+                dataset_name = "no_weather"
+                phys = False
+            case 3:          
+                phys = False
+                dataset_name = "nwp"
+                TL = False
+            case 4:          
+                phys = True
+                dataset_name = "nwp"
+                TL = False
+            case 5:
+                phys = False
+                dataset_name = "era5"
+            case 6:
+                phys = True
+                dataset_name ="era5"
+if phys:
+    phys_str = "phys.pkl"
+else:
+    phys_str= "no_phys.pkl"    
 #Remove study object
-storage_name = f"sqlite:///HP_{tuning_model}.db"
-study_name = f"{dataset_name} | transfo: {transfo} | TL: {TL} | Step: {step}"
+storage_name = f"sqlite:///HP_{domain}.db"
+study_name = f"{dataset_name} | Physics: {phys} | TL: {TL} | Step: {step}"
     
 optuna.delete_study(study_name=study_name, storage=storage_name)
+#Remove result
+if step == 2:
+    filepath = f"hyperparameters/features_"
+    if model == 2:
+         filepath += "no_weather_"
+    filepath += phys_str
+else:
+     filepath = f"HP_{domain}_{model}_{step}.pkl"
+
+if os.path.exists(filepath):
+  os.remove(filepath)
 
 
 #Remove sampler
-filepath = f"hyperparameters/samplers/sampler_{tuning_model}_{dataset_name}_{transfo}_{TL}_{step}.pkl"
+filepath = f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}_{step}.pkl"
 if os.path.exists(filepath):
-  os.remove(f"hyperparameters/samplers/sampler_{tuning_model}_{dataset_name}_{transfo}_{TL}_{step}.pkl")
+  os.remove(filepath)
