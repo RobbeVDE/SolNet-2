@@ -34,8 +34,12 @@ def objective(trial, dataset, source_state_dict, scale, step, case_n):
         if phys:
             phys_str = "phys.pkl"
         else:
-            phys_str= "no_phys.pkl"    
-        with open(f"hyperparameters/features_{dataset_name}_{phys_str}", 'rb') as f:
+            phys_str= "no_phys.pkl"
+        ftr_str = "hyperparameters/features_"
+        if case_n == 2:
+            ftr_str += "no_weather"
+        ftr_str += phys_str
+        with open(ftr_str, 'rb') as f:
             features = pickle.load(f)
     else:
         print("Only step 3 is done for target model")
