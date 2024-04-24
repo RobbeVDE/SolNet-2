@@ -114,7 +114,7 @@ class Featurisation:
             times = self.data[i].index
             solar_position = site.get_solarposition(times=times)
             ghi = self.data[i][GHI_name]
-            pres = self.dtaa[i]['pressure_MSL']
+            pres = self.data[i]['pressure_MSL']
             dni_extra = irradiance.get_extra_radiation(times)
             try:
                 dhi = self.data[i][DHI_name]
@@ -134,7 +134,22 @@ class Featurisation:
 
 
         return self.data
-    
+
+    def decomposition(self, lat, lon,
+                      DNI_name = "direct_surface_SW_flux", 
+                      DHI_name = "diffuse_surface_SW_flux"):
+        site = location.Location(lat, lon,  tz='UTC')
+        for i in range(len(self.data)):        
+            times = self.data[i].index
+            ghi = self.data[i]["downward_surface_SW_flux"]
+            pres = self.data[i]["pressure_MSL"] *100
+            solar_position = site.get_solarposition(times=times)
+            out_disc = irradiance.disc(ghi, solar_position.zenith, times, pres)
+            df_disc = irradiance.complete_irradiance(solar_position.apparent_zenith, ghi, dni=out_disc.dni, dhi=None)
+            dni = out_disc['dni']
+            self.data[i][DHI_name] = df_disc.dhi
+            self.data[i][DNI_name] = dni
+        return self.data
     def remove_outliers(self, GHI_name = 'downward_surface_SW_flux', tolerance = 50, outlier_list = None): 
         """"
         Remove data entries where the power of PV is 0 but GHI is higher than a specified tolerance
@@ -181,6 +196,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
     azimuth = metadata['Azimuth']
     lat = metadata['Latitude']
     lon = metadata['Longitude']
+    inv_limit = metadata['Inverter Power']
 
 
     #Month ranges, maybe option to specify this with function
@@ -262,16 +278,25 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
     data = Featurisation(data)
     data.data = data.cyclic_features()
     
+
+
     if source != 'no_weather':
+        if transform:
+            inv_list = [False, False, True] #Pre-processing only allowed for source_data 
+            data.data = data.inverter_limit(inv_limit, inv_list)
+
         data.data = data.cyclic_angle('wind_direction_10m')
+        data.data = data.add_shift('P') #Shift after inv_limit, otherwise discrepancy
         outlier_list = [False, True, True] #No outliers removed for evaluation as this is not
-        data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
+        data.data = data.remove_outliers(tolerance=100, outlier_list=outlier_list)
+        if installation_int == 2: #NWP Global only had GHI
+            data.data = data.decomposition(lat, lon)
         if transform:
             data.data = data.PoA(lat, lon, tilt, azimuth) 
-            inv_list = [False, False, True] #Pre-processing only allowed for 
-            data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
-            data.data = data.inverter_limit(2500, inv_list)
-        data.data = data.add_shift('P') #Shift after inv_limit, otherwise discrepancy
+            
+            
+        
+
     else:
         data.data = data.add_shift('P')
         

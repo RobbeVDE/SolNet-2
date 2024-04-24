@@ -149,7 +149,9 @@ def HP_tuning(domain, model, step):
                 hp = hyperparameters_target(hp_source.optimizer_name, lr, hp_source.n_layers, hp_source.n_nodes,
                                             dropout, batch_size) #Only parameters you optimized
             hp.save(model,step)
-
+        with open(f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}_{step}.pkl", "wb") as fout: 
+            pickle.dump(study.sampler, fout)
+            print("Sampler saved succesfully.")
             
     except KeyboardInterrupt: #If optimization process gets interrupted the sampler is saved for next time 
         with open(f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}_{step}.pkl", "wb") as fout: 

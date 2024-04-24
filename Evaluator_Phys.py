@@ -20,7 +20,7 @@ optimizer_name = "Adam"
 
 dataset_name = "nwp"
 phys_transfo = True
-source_dataset, target_dataset, eval_dataset = data_handeler(dataset_name, "nwp", "nwp", phys_transfo)
+source_dataset, target_dataset, eval_dataset = data_handeler(0,dataset_name, "nwp", "nwp", phys_transfo)
 
 installation_id = "3437BD60"
 metadata = pd.read_csv("Data/installations Netherlands.csv", sep=';')
@@ -35,7 +35,8 @@ longitude = metadata_id["Longitude"]
 y_forecast = physical(eval_dataset, tilt, azimuth, peakPower, 2500, latitude=latitude, longitude=longitude,
                        loss_inv = 0.84, temp_coeff=-0.002)
 y_truth = eval_dataset['P']
-
+print(y_forecast)
+print(y_truth)
 eval_obj = Evaluation(y_truth, y_forecast)
 print(eval_obj.metrics())
 plt.figure()

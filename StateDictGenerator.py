@@ -52,7 +52,7 @@ with open(ftr_file, 'rb') as f:
 
 
 scale = Scale()
-scale.load(dataset_name)
+scale.load(installation_int, dataset_name)
 
 hp = hyperparameters_source()
 hp.load(model,3)

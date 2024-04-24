@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 def metric_processor(accuracy, timer, i, j):
     n_sites = 3
-    n_models = 9
-    n_months = 12
+    n_models = 12
+    n_months = 13
     #Save mean metrics to put in table in report
     my_index = pd.MultiIndex.from_product([range(n_sites), range(n_months)], names=[u'one', u'two'])
     my_time_columns = pd.MultiIndex.from_product([range(n_models), ['Inference Time', 'Training Time']], names=[u'one', u'two'])
@@ -35,7 +35,7 @@ def metric_processor(accuracy, timer, i, j):
     rmse.loc[(j,slice(None)), i] = accuracy
 
     for key, value in timer.items():
-        avg_times.loc[j,(i,key) ] = np.mean(value)
+        avg_times.loc[j,(i,key) ] = np.nanmean(value)
         times.loc[(j, slice(None)), (i, key)] = value
     
     print(avg_rmse)

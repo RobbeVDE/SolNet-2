@@ -117,10 +117,11 @@ def persistence(dataset):
     infer_timer.stop()
     y_truth = dataset['P']
     powers = pd.concat([y_truth, y_forecast], axis=1)
-    error = powers.groupby(powers.index.month).apply(r2_rmse).reset_index()
+    powers['train_month'] = [i//(30*24) for i in range(len(powers.index))] #Our months in training process consists of 30 days 
+    error = powers.groupby(powers.train_month).apply(r2_rmse).reset_index()
     error = error['rmse'].to_list()
     print(error)
-    times = {'Inference Time': [infer_timer.elapsed_time()/12]*12} #Just assume it takes same amount of time for each month which makes sense
+    times = {'Inference Time': [infer_timer.elapsed_time()/13]*13} #Just assume it takes same amount of time for each month which makes sense
 
     return error, times
 
@@ -165,9 +166,10 @@ def physical(dataset, tilt, azimuth, peakPower, peakInvPower, temp_coeff=-0.004,
     infer_timer.stop()
     actual = dataset[['P']]
     powers = pd.concat([actual, forecast], axis=1)
-    error = powers.groupby(powers.index.month).apply(r2_rmse).reset_index()
+    powers['train_month'] = [i//(30*24) for i in range(len(powers.index))] #Our months in training process consists of 30 days 
+    error = powers.groupby(powers.train_month).apply(r2_rmse).reset_index()
     error = error['rmse'].to_list()
-    times = {'Inference Time': [infer_timer.elapsed_time()/12]*12} #Just assume it takes same amount of time for each month which makes sense
+    times = {'Inference Time': [infer_timer.elapsed_time()/13]*13} #Just assume it takes same amount of time for each month which makes sense
 
 
 
@@ -231,7 +233,8 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
 
         y_f_mse = y_interm.cpu().detach().flatten().numpy()
         y_t_mse = y_test[i].cpu().detach().flatten().numpy()
-
+        y_f_mse = unscale(y_f_mse, scale.max, scale.min)
+        y_t_mse = unscale(y_t_mse, scale.max, scale.min)
         mse.append(np.mean(np.square(y_f_mse-y_t_mse)))
         print(f"Currently in month {i}. MSE for this month is: {mse[-1]}")
         if hp.trial is not None:
@@ -246,12 +249,14 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
             train_timer.stop()
             model.load_state_dict(state_dict)
             training_times.append(train_timer.elapsed_time())
+        else:
+            training_times.append(np.nan)
 
     
     if hp.trial is not None: #If HP report average mse
         error = np.mean(mse)
     else:
-        error  = np.root(mse)
+        error  = np.sqrt(mse)
 
     times = {'Inference Time':inf_times, 'Training Time': training_times}
 

@@ -10,15 +10,17 @@ class Scale:
         self.max = max
         self.split = train_test_split
     def save(self,
+             site,
              dataset_name,  
              path="hyperparameters/scale"):
-        with open(f"{path}/{dataset_name}.pkl", 'wb') as f:
+        with open(f"{path}/{dataset_name}_{site}.pkl", 'wb') as f:
             pickle.dump(self, f)
 
     def load(self,
-              dataset_name,
+             site,
+             dataset_name,
               path="hyperparameters/scale"):
-        with open(f"{path}/{dataset_name}.pkl", 'rb') as f:
+        with open(f"{path}/{dataset_name}_{site}.pkl", 'rb') as f:
             old_scale = pickle.load(f)
             self.min = old_scale.min
             self.max = old_scale.max
@@ -35,10 +37,10 @@ class Scale:
         
 
 if __name__ == "__main__":
-    installation_id = "3437BD60"
+    installation_int = int(input("Specify site: \n 0. NL 1       | 3. UK \n 1. NL 2        |   \n 2. Costa Rica  | \n"))
     dataset_name = input("Dataset Name: Enter nwp, era5 or no_weather\n")
-    source_dataset,_,_ = data_handeler(installation_id, dataset_name, dataset_name, dataset_name)
+    source_dataset,_,_ = data_handeler(installation_int, dataset_name, dataset_name, dataset_name)
     scale = Scale()
     scale.calcul(source_dataset)
-    scale.save(dataset_name)
+    scale.save(installation_int, dataset_name)
     
