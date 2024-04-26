@@ -9,7 +9,7 @@ cache_session = requests_cache.CachedSession('.cache', expire_after = -1)
 retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
 openmeteo = openmeteo_requests.Client(session = retry_session)
 
-install_int = 3
+install_int = 0
 metadata = pd.read_pickle("Data/Sites/metadata.pkl")
 metadata = metadata.iloc[install_int]
 lat = metadata['Latitude']

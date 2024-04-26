@@ -1,6 +1,3 @@
-import pandas as pd
+import torch
 
-dataset = pd.read_parquet("UK/UK_generation.parquet")
-
-print(dataset)
-
+print(torch.cuda.is_available())

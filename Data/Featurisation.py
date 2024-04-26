@@ -1,8 +1,8 @@
 import numpy as np
 import pickle
 import pandas as pd
-from pvlib import location
-from pvlib import irradiance
+from pvlib import location, irradiance, temperature, pvsystem
+
 
 def _load_data(file_path):
     """
@@ -138,7 +138,7 @@ class Featurisation:
     def decomposition(self, lat, lon,
                       DNI_name = "direct_surface_SW_flux", 
                       DHI_name = "diffuse_surface_SW_flux"):
-        site = location.Location(lat, lon,  tz='UTC')
+        site = location.Location(lat, lon, altitude=location.lookup_altitude(lat, lon), tz='UTC')
         for i in range(len(self.data)):        
             times = self.data[i].index
             ghi = self.data[i]["downward_surface_SW_flux"]
@@ -167,6 +167,51 @@ class Featurisation:
                 dataset['date'] = dataset.index.date
                 dataset = dataset[~dataset.date.isin(dates)]
                 self.data[i] = dataset.drop('date', axis=1)
+
+        return self.data
+
+    def clearsky_power(self, lat, lon, peakPower, peakInvPower, tilt, azimuth):
+        #small praemters to have conservative maximum
+        azimuth = azimuth +180
+        loss_inv = 0.99
+        temp_coeff = -0.002
+        site = location.Location(lat, lon, tz='UTC')
+
+        for i in range(len(self.data)):
+
+            #1. Get clear sky irradiance for location
+            times = self.data[i].index
+            cs = site.get_clearsky(times)
+            
+
+            temp = self.data[i]['temperature_1_5m'] -275.13
+            wind_speed = self.data[i]['wind_speed_10m']
+            wind_height = 10
+            solar_position = site.get_solarposition(times=times)
+            ghi = cs["ghi"]
+            dhi = cs["dhi"]
+            dni = cs["dni"]
+            dni_extra = irradiance.get_extra_radiation(times)
+            POA_irrad = irradiance.get_total_irradiance(surface_tilt=tilt, surface_azimuth=azimuth, 
+                                                        dni=dni, ghi=ghi, dhi=dhi, solar_zenith=solar_position['apparent_zenith'],
+                                                        dni_extra=dni_extra, model='perez',solar_azimuth=solar_position['azimuth'])
+            
+            poa = POA_irrad['poa_global'].fillna(0)
+
+
+            temp_cell = temperature.fuentes(poa, temp, wind_speed, 49, wind_height=wind_height,
+                                                surface_tilt=tilt)
+
+            inv_params = {'pdc0': peakInvPower, 'eta_inv_nom': loss_inv}
+            module_params = {'pdc0': peakPower, 'gamma_pdc': temp_coeff}
+            mount = pvsystem.FixedMount(surface_tilt=tilt, surface_azimuth=azimuth)
+            array = pvsystem.Array(mount=mount, module_parameters = module_params)
+            pvsys = pvsystem.PVSystem(arrays=[array], inverter_parameters=inv_params)
+            dc_power = pvsys.pvwatts_dc(poa, temp_cell)
+
+            cs_power =  pvsys.get_ac('pvwatts', dc_power)
+            self.data[i]["CS_power"] = cs_power
+
 
         return self.data
     
@@ -291,8 +336,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         data.data = data.remove_outliers(tolerance=100, outlier_list=outlier_list)
         if installation_int == 2: #NWP Global only had GHI
             data.data = data.decomposition(lat, lon)
-        if transform:
-            data.data = data.PoA(lat, lon, tilt, azimuth) 
+         
             
             
         
@@ -304,7 +348,9 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
     for i in range(len(data.data)): #We added this bcs now we merge on outer of indices but lot of missing day data, now we want to have accurate regression so we do like this
         data.data[i] = data.data[i].dropna()
     
-
+    if transform:
+        data.data = data.PoA(lat, lon, tilt, azimuth)
+        data.data = data.clearsky_power(lat, lon, peakPower, inv_limit, tilt, azimuth)
 
     if source is not None:
         source_dataset = data.data[2]

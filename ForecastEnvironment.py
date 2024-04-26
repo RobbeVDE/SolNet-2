@@ -17,9 +17,10 @@ import torch
 from scale import Scale
 import pandas as pd
 from  hyperparameters import hyperparameters
-from evaluation.metric_processor import metric_processor
+from evaluation.metric_processor import metric_processor_target
 from Models.models import target
 import numpy as np
+import os
 from Models import models as md
 import pickle
 rmse = pd.DataFrame()
@@ -35,7 +36,10 @@ for i in models:
     for j in sites:
         if i <= 5:
             hp = hyperparameters.hyperparameters_target()
-            hp.load(i, 3)
+            try:
+                hp.load(i, 3)
+            except:
+                hp.load(0, 3)
             match i:
                 case 0:
                     phys = False
@@ -76,10 +80,14 @@ for i in models:
             ftr_string += phys_str
             scale = Scale()
             scale.load(j, dataset_name)
-            with open(ftr_string, 'rb') as f:
-                    features = pickle.load(f) 
+            if os.path.isfile(ftr_string):
+                with open(ftr_string, 'rb') as f:
+                        features = pickle.load(f)
+            else:
+                features = list(eval_dataset.columns)
+                features.remove('P')
             accur, timer = target(eval_dataset, features, hp, scale, WFE = True)
-            metric_processor(accur, timer, i,j)
+            metric_processor_target(accur, timer, i,j)
 
     else:
         match i:
@@ -87,7 +95,7 @@ for i in models:
                 for j in sites:
                     _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", False)
                     accur, timer = md.persistence(eval_dataset)
-                    metric_processor(accur, timer, i,j)
+                    metric_processor_target(accur, timer, i,j)
             case 8:
                 for j in sites:
                     _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", True)
@@ -100,7 +108,7 @@ for i in models:
                     lon = metadata_id["Longitude"]
                     inv_power = metadata_id["Inverter Power"]
                     accur, timer = md.physical(eval_dataset, tilt, azimuth, peakPower, inv_power, latitude=lat, longitude=lon)
-                    metric_processor(accur, timer, i,j)
+                    metric_processor_target(accur, timer, i,j)
 
         
 

@@ -1,9 +1,11 @@
 from Models.models import source
 from Data.Featurisation import data_handeler
 from hyperparameters.hyperparameters import hyperparameters_source
+from evaluation.metric_processor import metric_processor_source
 from scale import Scale
 import torch
 import pickle
+import os.path
 #### Model parameters
 installation_int = int(input("Specify site: \n 0. NL 1       | 3. UK \n 1. NL 2       \n 2. Costa Rica   \n"))
 model = int(input("Specify model:\n 0. TL(no phys)               | 4. target(no S, phys)) |  \n 1. TL(phys)                  | 5. TL(era5, no phys)   |  \n 2. TL(no weather cov)        | 6. TL(era5, phys)      | 10. CNN-LSTM ?? \n 3. target(no S, no phys))    | 7. biLSTM              | \n"))
@@ -46,18 +48,25 @@ if model == 2:#NO weather features
 ftr_file += phys_str
 
 
-
-with open(ftr_file, 'rb') as f:
-            features = pickle.load(f)
-
+if os.path.isfile(ftr_file):
+    with open(ftr_file, 'rb') as f:
+                features = pickle.load(f)
+else:
+    features = list(source_data.columns)
+    features.remove('P')
 
 scale = Scale()
 scale.load(installation_int, dataset_name)
 
 hp = hyperparameters_source()
-hp.load(model,3)
+try:
+    hp.load(model,3)
+except:
+    hp.load(0,3)
 hp.gif_plotter = False
 hp.bd =False
-accuracy, state_dict = source(source_data, features, hp, scale)
+accuracy, state_dict, timer = source(source_data, features, hp, scale)
+
+metric_processor_source(accuracy, timer, model, installation_int)
 
 torch.save(state_dict, f"Models/source/{dataset_name}_{installation_int}_{phys_str}")
