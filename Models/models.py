@@ -39,9 +39,9 @@ def source(dataset, features, hp, scale):
     
     source_model = LSTM(input_size,hp.n_nodes,hp.n_layers, forecast_period, hp.dropout, hp.bd, day_index).to(device)
         
-    avg_error, source_state_dict = trainer(dataset, features, model=source_model, hp=hp, scale=scale)
+    avg_error, source_state_dict, timer = trainer(dataset, features, model=source_model, hp=hp, scale=scale)
     if hp.trial is None:
-        return avg_error, source_state_dict
+        return avg_error, source_state_dict, timer
     else: #Only concerned about accuracy when doing HP tuning
         return avg_error
     
@@ -200,11 +200,16 @@ def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MS
 
     # Train the model and return the trained parameters and the best iteration
     if hp.trial is None:
+        timer = Timer()
         avg_error, state_dict = training.fit()
+        timer.stop()
     else:
+        timer = Timer()
         avg_error, state_dict = training.fit_cv()
+        timer.stop()
+        
 
-    return avg_error, state_dict
+    return avg_error, state_dict, timer.elapsed_time()
 
 def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MSELoss()):
 
@@ -220,6 +225,13 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
     mse = []
     inf_times = []
     training_times = []
+    try:
+        cs_power = dataset["CS_power"]
+        cs_power = cs_power.to_numpy()
+        cs_power = cs_power[lags:] #Cannot include first data bcs these are lags
+        phys = True
+    except:
+        phys=False
     for i in range(len(X_test)):
         model.eval()
         
@@ -228,13 +240,23 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
             y_interm = model(X_test[i])
             inf_timer.stop()
         y_interm = y_interm.squeeze()
-        y_forecast[i,:,:] = y_interm
+        # y_forecast[i,:,:] = y_interm
         inf_times.append(inf_timer.elapsed_time())
 
         y_f_mse = y_interm.cpu().detach().flatten().numpy()
         y_t_mse = y_test[i].cpu().detach().flatten().numpy()
         y_f_mse = unscale(y_f_mse, scale.max, scale.min)
         y_t_mse = unscale(y_t_mse, scale.max, scale.min)
+
+        # Physical post-processing power should be between 0 and CS power
+        if phys:
+            y_f_mse[y_f_mse<0] = 0
+            if ((i+1)*24*30) < len(cs_power):
+                y_max = cs_power[i*24*30:(i+1)*24*30]
+            else:
+                y_max = cs_power[i*24*30:]
+            y_f_mse[y_f_mse > y_max] = y_max[y_f_mse > y_max]
+
         mse.append(np.mean(np.square(y_f_mse-y_t_mse)))
         print(f"Currently in month {i}. MSE for this month is: {mse[-1]}")
         if hp.trial is not None:
@@ -276,42 +298,7 @@ def tester(dataset, features, model, scale=None): #Here plotting possibility??
 
 
 
-def CS_power(dataset, latitude, longitude, peak_power):
-    PV_power = dataset['P']
-    
-    tz = 'UTC'
 
-    location = Location(latitude, longitude, tz= tz)
-
-    #1. Get clear sky irradiance for location
-    times = dataset.index
-    cs = location.get_clearsky(times)
-    temperature_model_parameters = TEMPERATURE_MODEL_PARAMETERS['sapm']['open_rack_glass_glass']
-
-    # load some module and inverter specifications (this is random for now)
-    sandia_modules = pvlib.pvsystem.retrieve_sam('SandiaMod')
-
-    cec_inverters = pvlib.pvsystem.retrieve_sam('cecinverter')
-
-    sandia_module = sandia_modules['Canadian_Solar_CS5P_220M___2009_']
-
-    cec_inverter = cec_inverters['ABB__MICRO_0_25_I_OUTD_US_208__208V_']
-    N = round(peak_power/250)
-    system = PVSystem(surface_tilt=20, surface_azimuth=200,
-                  module_parameters=sandia_module,
-                  modules_per_string=N,
-                  inverter_parameters=cec_inverter,
-                  temperature_model_parameters=temperature_model_parameters)
-
-
-
-    mc = ModelChain(system, location)
-    mc.run_model(cs)
-    csi_power = mc.results.dc["p_mp"]
-    test = pd.merge(csi_power, PV_power, left_index = True, right_index = True)
-    dataset["CS_residual"] = (test["p_mp"]-test["P"])/peak_power
-
-    return dataset, csi_power
 
 def eval_plotter(truth, forecast, start="2021-08-01", end="2022-08-03"):
   

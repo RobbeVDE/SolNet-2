@@ -1,5 +1,7 @@
 import torch
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def _moving_window(tensor, timesteps, prediction_length, length):
     """
@@ -127,8 +129,8 @@ class Tensorisation:
 
 
         if WFE:
-            X = torch.concat([X_train, X_test])
-            y = torch.concat([y_train, y_test])
+            X = torch.concat([X_train, X_test]).to(device)
+            y = torch.concat([y_train, y_test]).to(device)
             iterations = int(X.size(0)/window_days)
             X_train =[]
             X_test = []
@@ -145,15 +147,14 @@ class Tensorisation:
                     X_train.append(X[(i-12)*window_days:(i+1)*window_days, :,:])
                     y_train.append(y[(i-12)*window_days:(i+1)*window_days, :,:])
             
-            #Pad with zeroes last test month to have consistent tensor sizes
             
-            y_final = torch.zeros(window_days, y.size(1), y.size(2))
-            n_days_left = X.size(0)%window_days
-            y_final[:n_days_left,:,:] = y[iterations*window_days:,:,:]
-            X_final = torch.zeros(window_days, X.size(1), X.size(2))
-            X_final[:n_days_left,:,:] = X[iterations*window_days:,:,:]
-            y_test.append(y_final)
-            X_test.append(X_final)
+            y_test.append(y[iterations*window_days:,:,:])
+            X_test.append(X[iterations*window_days:,:,:])
+        else:
+            X_train = X_train.to(device)
+            X_test = X_test.to(device)
+            y_train = y_train.to(device)
+            y_test = y_test.to(device)
 
         return X_train, X_test, y_train, y_test
 

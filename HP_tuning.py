@@ -60,7 +60,7 @@ def HP_tuning(domain, model, step):
 
 
     scale = Scale() #Load right scale
-    scale.load(dataset_name)
+    scale.load(installation_int, dataset_name)
 
     objective = partial(objective,  dataset = dataset, source_state_dict = source_state_dict, scale=scale, step=step, case_n=model)
 

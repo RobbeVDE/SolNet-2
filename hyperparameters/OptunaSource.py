@@ -44,7 +44,7 @@ def objective(trial, dataset, source_state_dict, scale, step, case_n):
 
     # Generate the optimizers and hyperparameters
         optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
-        lr = trial.suggest_loguniform("lr_source", 1e-5, 1e-1)
+        lr = trial.suggest_loguniform("lr_source", 1e-6, 1e-1)
 
         n_layers = trial.suggest_int("n_layers_source", 1, 5)
 
