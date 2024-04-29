@@ -6,6 +6,9 @@ from scale import Scale
 import torch
 import pickle
 import os.path
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 #### Model parameters
 installation_int = int(input("Specify site: \n 0. NL 1       | 3. UK \n 1. NL 2       \n 2. Costa Rica   \n"))
 model = int(input("Specify model:\n 0. TL(no phys)               | 4. target(no S, phys)) |  \n 1. TL(phys)                  | 5. TL(era5, no phys)   |  \n 2. TL(no weather cov)        | 6. TL(era5, phys)      | 10. CNN-LSTM ?? \n 3. target(no S, no phys))    | 7. biLSTM              | \n"))
@@ -66,7 +69,7 @@ except:
 hp.gif_plotter = False
 hp.bd =False
 accuracy, state_dict, timer = source(source_data, features, hp, scale)
-
+state_dict = state_dict
 metric_processor_source(accuracy, timer, model, installation_int)
 
 torch.save(state_dict, f"Models/source/{dataset_name}_{installation_int}_{phys_str}")

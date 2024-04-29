@@ -25,6 +25,8 @@ from Models import models as md
 import pickle
 rmse = pd.DataFrame()
 timer = pd.DataFrame()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 ctn_eval = False #Loop trough all models and sites
 if ctn_eval:
     models = range(9)
@@ -44,15 +46,15 @@ for i in models:
                 case 0:
                     phys = False
                     dataset_name = "nwp"           
-                    hp.source_state_dict = torch.load(f"Models/source/nwp_{j}_no_phys.pkl")
+                    hp.source_state_dict = torch.load(f"Models/source/nwp_{j}_no_phys.pkl", map_location=device)
                 case 1:
                     phys = True           
                     dataset_name = "nwp"
-                    hp.source_state_dict = torch.load(f"Models/source/nwp_{j}_phys.pkl")
+                    hp.source_state_dict = torch.load(f"Models/source/nwp_{j}_phys.pkl", map_location=device)
                 case 2:
                     dataset_name = "no_weather"
                     phys = False
-                    hp.source_state_dict = torch.load(f"Models/source/no_weather_{j}_no_phys.pkl")
+                    hp.source_state_dict = torch.load(f"Models/source/no_weather_{j}_no_phys.pkl", map_location=device)
                 case 3:          
                     phys = False
                     dataset_name = "nwp"
@@ -63,11 +65,11 @@ for i in models:
                 case 5:
                     phys = False
                     dataset_name = "era5"
-                    hp.source_state_dict = torch.load(f"Models/source/era5_{j}_no_phys.pkl")
+                    hp.source_state_dict = torch.load(f"Models/source/era5_{j}_no_phys.pkl", map_location=device)
                 case 6:
                     phys = True
                     dataset_name ="era5"
-                    hp.source_state_dict = torch.load(f"Models/source/era5_{j}_phys.pkl")
+                    hp.source_state_dict = torch.load(f"Models/source/era5_{j}_phys.pkl", map_location=device)
             if phys:
                 phys_str = "phys.pkl"
             else:

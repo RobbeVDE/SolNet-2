@@ -242,7 +242,8 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
     lat = metadata['Latitude']
     lon = metadata['Longitude']
     inv_limit = metadata['Inverter Power']
-
+    start = metadata['Start']
+    end = metadata['End']
 
     #Month ranges, maybe option to specify this with function
     if month_source:   
@@ -251,7 +252,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         source_range = pd.date_range("2016-05-01","2019-04-30 23:00", freq='h', tz="UTC")
 
     target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC")
-    eval_range = pd.date_range("2020-05-01", "2021-04-30 23:00", tz="UTC", freq='h')
+    eval_range = pd.date_range(start, end, tz="UTC", freq='h')
 
     #Check if running in Google Colab
     try:
@@ -298,11 +299,11 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
     
 
     #Merge right data to have source, target and eval dataset
-    list = [eval, target, source]
+    looplist = [eval, target, source]
     power_list = [power, power, pvgis]
     range_list = [eval_range, target_range,source_range]
     data = []
-    for i, entry in enumerate(list):
+    for i, entry in enumerate(looplist):
         if entry == "nwp":
             covariates = ceda
         elif entry == "era5":
@@ -336,18 +337,14 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         data.data = data.remove_outliers(tolerance=100, outlier_list=outlier_list)
         if installation_int == 2: #NWP Global only had GHI
             data.data = data.decomposition(lat, lon)
-         
-            
-            
-        
-
     else:
         data.data = data.add_shift('P')
         
 
     for i in range(len(data.data)): #We added this bcs now we merge on outer of indices but lot of missing day data, now we want to have accurate regression so we do like this
+        
         data.data[i] = data.data[i].dropna()
-    
+
     if transform:
         data.data = data.PoA(lat, lon, tilt, azimuth)
         data.data = data.clearsky_power(lat, lon, peakPower, inv_limit, tilt, azimuth)

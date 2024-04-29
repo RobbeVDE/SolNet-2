@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-def metric_processor(accuracy, timer, i, j):
+def metric_processor_target(accuracy, timer, i, j):
     n_sites = 4
     n_models = 12
     n_months = 13
@@ -32,11 +32,11 @@ def metric_processor(accuracy, timer, i, j):
 
     avg_acc =  np.sqrt((np.sum(np.square(accuracy)))/n_months)
     avg_rmse.loc[j,i] = avg_acc
-    rmse.loc[(j,slice(None)), i] = accuracy
+    rmse.loc[(j,slice(0,len(accuracy)-1)), i] = accuracy
 
     for key, value in timer.items():
         avg_times.loc[j,(i,key) ] = np.nanmean(value)
-        times.loc[(j, slice(None)), (i, key)] = value
+        times.loc[(j,(slice(0,len(value)-1))), (i, key)] = value
     
     print(avg_rmse)
     print(avg_times)

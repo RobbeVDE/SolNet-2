@@ -10,7 +10,8 @@ from pvlib.pvsystem import PVSystem, FixedMount
 import numpy as np
 import optuna
 from pvlib.modelchain import ModelChain
-
+from pvlib import temperature, irradiance, location, pvsystem
+from sklearn.metrics import r2_score, mean_squared_error
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
 
 import matplotlib.pyplot as plt
@@ -20,12 +21,7 @@ from pvlib.iotools import read_tmy3
 epochs = 100
 lags = 24
 forecast_period=24
-hidden_size = 400
-num_layers_source = 1
-num_layers_target = 5
-dropout = 0.3
-lr_source=0.001
-lr_target = 1e-5
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -66,50 +62,6 @@ def target(dataset, features, hp, scale, WFE):
     else:
         return avg_error
 
-def TL(source_data, target_data, features, eval_data, scale=None): #, hyper_tuning, transposition,
-    
-    if "is_day" in features:
-        day_index =  features.index("is_day") #BCS power also feature
-        input_size = len(features)-1
-    else:
-        day_index=None
-        input_size = len(features)
-    
-    #### SOURCE MODEL ########
-    source_model = LSTM(input_size,hidden_size,num_layers_source,num_layers_target, forecast_period, dropout, day_index).to(device)
-    #Freeze the layers which are reserved for the target training
-    
-    
-    source_state_list, source_epoch = trainer(source_data, features,model=source_model, scale=scale, lr=lr_source)
-
-    source_state_dict = source_state_list[source_epoch]
-    
-    #### TRANSFER MODEL #####
-
-    transfer_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
-    transfer_model.load_state_dict(source_state_dict)
-
-    for param in transfer_model.source_lstm.parameters():
-        param.requires_grad = False
-    
-    
-    target_state_list, target_epoch = trainer(target_data, features, scale=scale, model=transfer_model, lr=lr_target)
-    target_state_dict = target_state_list[target_epoch]
-
-    ##### TEST MODEL ######
-
-    eval_model = LSTM(input_size,hidden_size,num_layers_source, num_layers_target, forecast_period, dropout, day_index).to(device)
-    eval_model.load_state_dict(target_state_dict)
-    y_truth, y_forecast = tester(eval_data, features, eval_model, scale=scale)
-    
-    y_truth = y_truth.cpu().detach().flatten().numpy()
-    y_forecast = y_forecast.cpu().detach().flatten().numpy()
-
-    eval_obj = Evaluation(y_truth, y_forecast)
-
-    
-    return target_state_dict, eval_obj
-
 
 def persistence(dataset):
     infer_timer = Timer()
@@ -125,8 +77,7 @@ def persistence(dataset):
 
     return error, times
 
-from pvlib import temperature, irradiance, location, pvsystem
-from sklearn.metrics import r2_score, mean_squared_error
+
 def physical(dataset, tilt, azimuth, peakPower, peakInvPower, temp_coeff=-0.004, loss_inv=0.96, latitude=None, longitude=None):
     
     try:

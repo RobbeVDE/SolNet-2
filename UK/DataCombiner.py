@@ -15,16 +15,16 @@ total_df["wind_direction_10m"] = np.arctan2(total_df["wind_v_10m"], total_df["wi
 total_df.drop(columns=['wind_u_10m', 'wind_v_10m'], inplace=True)
 total_df['pressure_MSL'] = total_df['pressure_MSL']/100
 
-#2016-07-14 has empty columns but didn't give an error so fill up with NaN values here, keep it general if more days missing
-# missing_days = [pd.to_datetime("2016-07-14", utc=True)]
-# for day in missing_days:
-#     hour_range = pd.date_range(day, day+pd.Timedelta('23h', tz="UTC"), freq='h')
-#     lol = pd.DataFrame(index=hour_range, columns=total_df.columns)
-#     total_df = pd.concat([total_df, lol])
+#2016-07-14 has empty hour but didn't give an error so fill up with NaN values here, keep it general if more days missing
+missing_days = [pd.to_datetime("2016-07-14 00:00", utc=True)]
+for day in missing_days:
+    hour_range = pd.date_range(day, day+pd.Timedelta('0h', tz="UTC"), freq='h')
+    lol = pd.DataFrame(index=hour_range, columns=total_df.columns)
+    total_df = pd.concat([total_df, lol])
 
-# total_df.sort_index(inplace=True)
+total_df.sort_index(inplace=True)
 
-# print(total_df["2017-02-01":"2017-02-28"])
+print(total_df["2017-02-01":"2017-02-28"])
 #Check if there are no dates missing now anymore
 day_range = pd.date_range("2016-05-01", "2021-12-31", freq='D')
 total_df['date'] = total_df.index.date
