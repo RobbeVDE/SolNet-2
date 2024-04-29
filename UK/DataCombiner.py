@@ -11,7 +11,7 @@ for i in range(1,3):
 total_df.index = pd.to_datetime(total_df.index, utc=True)
 print(total_df)
 total_df["wind_speed_10m"] = np.sqrt(total_df["wind_u_10m"] **2+ total_df["wind_v_10m"] **2)
-total_df["wind_direction_10m"] = np.arctan2(total_df["wind_v_10m"], total_df["wind_u_10m"]) *180/np.pi  #Convert from [-pi, pi] to [0,360]
+total_df["wind_direction_10m"] = np.arctan2(total_df["wind_v_10m"], total_df["wind_u_10m"]) *180/np.pi +180 #Convert from [-pi, pi] to [0,360]
 total_df.drop(columns=['wind_u_10m', 'wind_v_10m'], inplace=True)
 total_df['pressure_MSL'] = total_df['pressure_MSL']/100
 

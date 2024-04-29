@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 def metric_processor(accuracy, timer, i, j):
-    n_sites = 3
+    n_sites = 4
     n_models = 12
     n_months = 13
     #Save mean metrics to put in table in report

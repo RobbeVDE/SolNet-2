@@ -108,7 +108,7 @@ class Featurisation:
         
         azimuth = azimuth+180 #PVGIS works in [-180,180] and pvlib in [0,360]
 
-        site = location.Location(latitude, longitude,  tz='UTC')
+        site = location.Location(latitude, longitude, altitude=location.lookup_altitude(latitude, longitude),  tz='UTC')
         for i in range(len(self.data)):
 
             times = self.data[i].index
@@ -138,7 +138,7 @@ class Featurisation:
     def decomposition(self, lat, lon,
                       DNI_name = "direct_surface_SW_flux", 
                       DHI_name = "diffuse_surface_SW_flux"):
-        site = location.Location(lat, lon,  tz='UTC')
+        site = location.Location(lat, lon, altitude=location.lookup_altitude(lat, lon),  tz='UTC')
         for i in range(len(self.data)):        
             times = self.data[i].index
             ghi = self.data[i]["downward_surface_SW_flux"]

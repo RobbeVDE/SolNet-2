@@ -1,6 +1,6 @@
-import pandas as pd
+from pvlib import location
 
-dataset = pd.read_parquet("UK/UK_generation.parquet")
+site = location.Location(9.93676, -84.04388)
 
-print(dataset)
+print(location.lookup_altitude(9.93676, -84.04388))
 
