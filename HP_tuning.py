@@ -60,7 +60,7 @@ def HP_tuning(domain, model, step):
 
 
     scale = Scale() #Load right scale
-    scale.load(installation_int, dataset_name)
+    scale.load(installation_int, dataset_name, phys)
 
     objective = partial(objective,  dataset = dataset, source_state_dict = source_state_dict, scale=scale, step=step, case_n=model)
 
@@ -81,10 +81,10 @@ def HP_tuning(domain, model, step):
         print("Initialize a new sampler")
 
     study = optuna.create_study(study_name=study_name, storage=storage_name, direction="minimize", 
-                                load_if_exists=True, sampler=sampler)
+                                load_if_exists=True, sampler=sampler, pruner=optuna.pruners.PercentilePruner(25.0, n_warmup_steps=5, interval_steps=1))
     try:
         if step == 2:
-            n_trials = 300
+            n_trials = 500
             if model == 2: # no weather cov so only 8 possib
                 n_trials = 8
         elif step == 1:

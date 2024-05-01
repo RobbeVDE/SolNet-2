@@ -53,13 +53,13 @@ ftr_file += phys_str
 
 if os.path.isfile(ftr_file):
     with open(ftr_file, 'rb') as f:
-                features = pickle.load(f)
+        features = pickle.load(f)
 else:
     features = list(source_data.columns)
     features.remove('P')
 
 scale = Scale()
-scale.load(installation_int, dataset_name)
+scale.load(installation_int, dataset_name, phys)
 
 hp = hyperparameters_source()
 try:
