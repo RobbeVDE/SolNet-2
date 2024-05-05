@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from pvlib.location import Location
 
 from pvlib.iotools import read_tmy3
-epochs = 200
+epochs = 100
 lags = 24
 forecast_period=24
 

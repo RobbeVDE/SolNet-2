@@ -40,46 +40,29 @@ def objective(trial, dataset, source_state_dict, scale, step, case_n):
         features.remove('P')
     
         
-    if step == 1:
-
+    if step == 2:
+        sel_features = feature_selection(trial, features)
+        features = list(compress(features, sel_features))
+        if features == []:
+            return 100 # Just return high value
+        hp = hyperparameters_source()
+        hp.trial = trial
+        hp.load(case_n, 1)
+    else:
     # Generate the optimizers and hyperparameters
         optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
         lr = trial.suggest_loguniform("lr_source", 1e-6, 1e-1)
 
-        n_layers = trial.suggest_int("n_layers_source", 1, 5)
+        n_layers = trial.suggest_int("n_layers_source", 1, 3)
 
-        n_nodes = trial.suggest_int("n_units_source",4,502)
+        n_nodes = trial.suggest_int("n_units_source",4,800)
 
         dropout = trial.suggest_uniform("dropout_l", 0.1, 0.5)
 
-        batch_size = trial.suggest_int("Batch_size_source", 4,64)
+        batch_size = trial.suggest_int("Batch_size_source", 4,128)
 
         hp = hyperparameters_source(optimizer_name, lr, n_layers, n_nodes, dropout, batch_size, trial)
-    else:
-        hp = hyperparameters_source()
-        hp.trial = trial
-        hp.load(case_n, 1)
-        if step == 2:
-            sel_features = feature_selection(trial, features)
-            features = list(compress(features, sel_features))
-            if features == []:
-                return 100 # Just return high value
-        else:
-            optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
-            lr = trial.suggest_loguniform("lr_source", hp.lr/100, hp.lr*100)
-
-            if hp.n_layers-2 <= 1:
-                min_layers = 1
-            else:
-                min_layers = hp.n_layers-2
-            n_layers = trial.suggest_int("n_layers_source", min_layers, hp.n_layers+2)
-
-            n_nodes = trial.suggest_int("n_units_source",int(hp.n_nodes/2),int(hp.n_nodes*2))
-
-            dropout = trial.suggest_uniform("dropout_l", hp.dropout/2, hp.dropout*2)
-
-            batch_size = trial.suggest_int("Batch_size_source", int(hp.batch_size/10), int(hp.batch_size*10))
-            
+    
         
 
 

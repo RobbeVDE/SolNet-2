@@ -98,6 +98,7 @@ class Featurisation:
             radians = np.deg2rad(self.data[i][feature])
             self.data[i][f'{feature}_cos'] = np.cos(radians)
             self.data[i][f'{feature}_sin'] = np.sin(radians)
+            self.data[i].drop(columns = feature, inplace=True)
         return self.data
     
 
