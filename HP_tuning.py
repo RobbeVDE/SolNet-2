@@ -147,7 +147,7 @@ def HP_tuning(domain, model, step):
                 hp_source = hyperparameters_source()
                 hp_source.load(model,3) #Load hyperparam source for n_layers and stuf
                 hp = hyperparameters_target(hp_source.optimizer_name, lr, hp_source.n_layers, hp_source.n_nodes,
-                                            dropout, batch_size) #Only parameters you optimized
+                                            hp_source.dropout, batch_size) #Only parameters you optimized
             hp.save(model,step)
         with open(f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}_{step}.pkl", "wb") as fout: 
             pickle.dump(study.sampler, fout)

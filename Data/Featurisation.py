@@ -144,11 +144,10 @@ class Featurisation:
             ghi = self.data[i]["downward_surface_SW_flux"]
             pres = self.data[i]["pressure_MSL"] *100
             solar_position = site.get_solarposition(times=times)
-            out_disc = irradiance.disc(ghi, solar_position.zenith, times, pres)
-            df_disc = irradiance.complete_irradiance(solar_position.apparent_zenith, ghi, dni=out_disc.dni, dhi=None)
-            dni = out_disc['dni']
-            self.data[i][DHI_name] = df_disc.dhi
-            self.data[i][DNI_name] = dni
+            dni_dirint = irradiance.dirint(ghi, solar_position.zenith, times, pres)
+            df_dirint = irradiance.complete_irradiance(solar_position.apparent_zenith, ghi, dni=dni_dirint, dhi=None)
+            self.data[i][DHI_name] = df_dirint.dhi
+            self.data[i][DNI_name] = df_dirint.dni
         return self.data
     def remove_outliers(self, GHI_name = 'downward_surface_SW_flux', tolerance = 50, outlier_list = None): 
         """"
