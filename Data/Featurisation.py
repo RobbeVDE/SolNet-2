@@ -98,6 +98,7 @@ class Featurisation:
             radians = np.deg2rad(self.data[i][feature])
             self.data[i][f'{feature}_cos'] = np.cos(radians)
             self.data[i][f'{feature}_sin'] = np.sin(radians)
+            self.data[i].drop(columns = feature, inplace=True)
         return self.data
     
 
@@ -333,7 +334,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         data.data = data.cyclic_angle('wind_direction_10m')
         data.data = data.add_shift('P') #Shift after inv_limit, otherwise discrepancy
         outlier_list = [False, True, True] #No outliers removed for evaluation as this is not
-        data.data = data.remove_outliers(tolerance=100, outlier_list=outlier_list)
+        data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
         if installation_int == 2: #NWP Global only had GHI
             data.data = data.decomposition(lat, lon)
     else:

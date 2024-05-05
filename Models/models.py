@@ -134,8 +134,7 @@ def r2_rmse(g):
 def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MSELoss()):
 
 
-    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, 
-                            train_test_split=scale.split, domain_min=scale.min,domain_max=scale.max)
+    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale.min,domain_max=scale.max)
     X_train, X_test, y_train, y_test = tensors.tensor_creation()
     
     print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
@@ -165,8 +164,7 @@ def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MS
 def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MSELoss()):
 
 
-    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, 
-                            train_test_split=scale.split, domain_min=scale.min,domain_max=scale.max)
+    tensors = Tensorisation(dataset, 'P', features, lags, forecast_period,  domain_min=scale.min,domain_max=scale.max)
     X_train, X_test, y_train, y_test = tensors.tensor_creation(WFE=True)
     
     print("Shape of data: ", X_train[0].shape, X_test[0].shape, y_train[0].shape, y_test[0].shape)
