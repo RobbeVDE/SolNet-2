@@ -55,8 +55,7 @@ if os.path.isfile(ftr_file):
     with open(ftr_file, 'rb') as f:
         features = pickle.load(f)
 else:
-    features = list(source_data.columns)
-    features.remove('P')
+    features = ['temperature_1_5m', 'PoA', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'P_24h_shift']
 
 scale = Scale()
 scale.load(installation_int, dataset_name, phys)
@@ -65,7 +64,7 @@ hp = hyperparameters_source()
 try:
     hp.load(model,3)
 except:
-    hp.load(0,3)
+    hp.load(0,3, False)
 hp.gif_plotter = False
 hp.bd =False
 accuracy, state_dict, timer = source(source_data, features, hp, scale)

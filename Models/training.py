@@ -99,7 +99,7 @@ class Training:
         avg_test_error = []
         state_dict_list = []
         
-        optimizer = getattr(optim, self.optimizer_name)(self.model.parameters(), lr=self.lr)
+        optimizer = getattr(optim, self.optimizer_name)(self.model.parameters(), lr=self.lr, weight_decay=1e-5)
 
         early_stopper = EarlyStopper(patience=5, min_delta=0.005)
         for epoch in range(self.epochs):
