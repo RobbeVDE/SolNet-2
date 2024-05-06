@@ -63,5 +63,6 @@ if __name__ == "__main__":
     source_dataset, _, _ = data_handeler(installation_int, dataset_name, "nwp", "nwp", phys)
     scale = Scale()
     scale.calcul(source_dataset)
+    print(scale.max)
     scale.save(installation_int, dataset_name, phys)
     

@@ -2,7 +2,7 @@ import numpy as np
 import pickle
 import pandas as pd
 from pvlib import location, irradiance, temperature, pvsystem
-
+import matplotlib.pyplot as plt
 
 def _load_data(file_path):
     """
@@ -170,12 +170,12 @@ class Featurisation:
 
         return self.data
 
-    def clearsky_power(self, lat, lon, peakPower, peakInvPower, tilt, azimuth):
+    def clearsky_power(self, lat, lon, peakPower, tilt, azimuth):
         #small praemters to have conservative maximum
         azimuth = azimuth +180
         loss_inv = 0.99
         temp_coeff = -0.002
-        site = location.Location(lat, lon, tz='UTC')
+        site = location.Location(lat, lon, altitude=location.lookup_altitude(lat, lon),tz='UTC')
 
         for i in range(len(self.data)):
 
@@ -202,7 +202,7 @@ class Featurisation:
             temp_cell = temperature.fuentes(poa, temp, wind_speed, 49, wind_height=wind_height,
                                                 surface_tilt=tilt)
 
-            inv_params = {'pdc0': peakInvPower, 'eta_inv_nom': loss_inv}
+            inv_params = {'pdc0': peakPower, 'eta_inv_nom': loss_inv}
             module_params = {'pdc0': peakPower, 'gamma_pdc': temp_coeff}
             mount = pvsystem.FixedMount(surface_tilt=tilt, surface_azimuth=azimuth)
             array = pvsystem.Array(mount=mount, module_parameters = module_params)
@@ -226,7 +226,23 @@ class Featurisation:
                 self.data[i]['P'] = dataset
         return self.data
     
+    def deseasonalise(self, lat, lon):
+        for i in range(len(self.data)):
+            power = self.data[i]['P']
+            power_24h = self.data[i]['P_24h_shift']
+            cs_power = self.data[i]['CS_power']
 
+            times = self.data[i].index
+            site= location.Location(lat, lon, altitude=location.lookup_altitude(lat,lon), tz='UTC')
+            sol_pos = site.get_solarposition(times)     
+            mask = sol_pos['zenith'] < 80
+
+            power[~mask] = 0.0
+            power[mask] = power[mask]/cs_power[mask]
+            power_24h[~mask] = 0.0
+            power_24h[mask] = power_24h[mask]/cs_power[mask]
+
+        return self.data
     
 def data_handeler(installation_int = 0, source=None, target=None, eval=None, transform = True, month_source=False):
     """
@@ -347,7 +363,8 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
 
     if transform:
         data.data = data.PoA(lat, lon, tilt, azimuth)
-        data.data = data.clearsky_power(lat, lon, peakPower, inv_limit, tilt, azimuth)
+        data.data = data.clearsky_power(lat, lon, peakPower, tilt, azimuth)
+        data.data = data.deseasonalise(lat, lon)
 
     if source is not None:
         source_dataset = data.data[2]

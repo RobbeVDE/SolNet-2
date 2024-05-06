@@ -114,18 +114,20 @@ class Tensorisation:
                                             self.lags,
                                             self.forecast_period, test_len).squeeze(-1)
             
-            
+            if feature == "P_24h_shift":
+                i_shift = i
 
             # Make the target vector if the feature is our target
         y_tensor = torch.tensor(self.data['P']).type(torch.float32)
         y_tensor = y_tensor[self.lags:]
         y_train, y_test = _scale(y_tensor[:flat_train_len],
                                     y_tensor[flat_train_len:],
-                                     domain_min=self.domain_min[feature] if isinstance(self.domain_max, dict) else None,
-                                domain_max=self.domain_max[feature] if isinstance(self.domain_max, dict) else None)
+                                     domain_min=self.domain_min['P'] if isinstance(self.domain_max, dict) else None,
+                                domain_max=self.domain_max['P'] if isinstance(self.domain_max, dict) else None)
 
         y_train = y_train.view(train_len, self.forecast_period, 1)
         y_test = y_test.view(test_len, self.forecast_period, 1)
+
 
 
         if WFE:

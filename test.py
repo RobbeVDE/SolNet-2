@@ -1,3 +1,3 @@
-import torch 
+from Data.Featurisation import data_handeler
 
-print(torch.cuda.is_available())
+source_data, _,_ = data_handeler(0,'nwp','nwp','nwp')
