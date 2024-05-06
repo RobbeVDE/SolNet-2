@@ -69,6 +69,7 @@ def persistence(dataset):
     infer_timer.stop()
     y_truth = dataset['P']
     powers = pd.concat([y_truth, y_forecast], axis=1)
+    powers = powers.iloc[lags:] #Lag values cannot be taken into account
     powers['train_month'] = [i//(30*24) for i in range(len(powers.index))] #Our months in training process consists of 30 days 
     error = powers.groupby(powers.train_month).apply(r2_rmse).reset_index()
     error = error['rmse'].to_list()
@@ -204,11 +205,13 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
             y_f_mse[y_f_mse<0] = 0
             y_f_mse[y_f_mse>1] = 1
 
-        #Unscale it again to have values in Watt
-        if ((i+1)*24*30) < len(cs_power):
-            y_max = cs_power[i*24*30:(i+1)*24*30]
+            #Unscale it again to have values in Watt
+            if ((i+1)*24*30) < len(cs_power):
+                y_max = cs_power[i*24*30:(i+1)*24*30]
+            else:
+                y_max = cs_power[i*24*30:]
         else:
-            y_max = cs_power[i*24*30:]
+            y_max = 1
         y_f_mse = unscale(y_f_mse, y_max, scale.max, scale.min)
         y_t_mse = unscale(y_t_mse, y_max, scale.max, scale.min)
 

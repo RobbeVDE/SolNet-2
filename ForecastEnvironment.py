@@ -39,9 +39,9 @@ for i in models:
         if i <= 5:
             hp = hyperparameters.hyperparameters_target()
             try:
-                hp.load(i, 3)
+                hp.load(i)
             except:
-                hp.load(0, 1)
+                hp.load(0)
             match i:
                 case 0:
                     phys = False
@@ -75,7 +75,7 @@ for i in models:
             else:
                 phys_str= "no_phys.pkl"    
             _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", phys)
-            ftr_string ="hyperparameters/features_"
+            ftr_string ="features/ft_"
 
             if i == 2:
                 ftr_string+= "no_weather_"
@@ -86,8 +86,8 @@ for i in models:
                 with open(ftr_string, 'rb') as f:
                         features = pickle.load(f)
             else:
-                features = list(eval_dataset.columns)
-                features.remove('P')
+                features = ['temperature_1_5m', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'P_24h_shift']
+
             accur, timer = target(eval_dataset, features, hp, scale, WFE = True)
             metric_processor_target(accur, timer, i,j)
 
