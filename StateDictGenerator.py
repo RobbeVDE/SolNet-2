@@ -64,7 +64,7 @@ hp = hyperparameters_source()
 try:
     hp.load(model,3)
 except:
-    hp.load(0,3, False)
+    hp.load(0,1, False)
 hp.gif_plotter = False
 hp.bd =False
 accuracy, state_dict, timer = source(source_data, features, hp, scale)

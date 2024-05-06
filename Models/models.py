@@ -137,6 +137,10 @@ def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MS
     tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale.min,domain_max=scale.max)
     X_train, X_test, y_train, y_test = tensors.tensor_creation()
     
+    # X_train = torch.flip(X_test, [0])
+    # X_test = torch.flip(X_train, [0])
+    # y_train = torch.flip(y_test, [0])
+    # y_test = torch.flip(y_train, [0])
     print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
     if hp.gif_plotter:
@@ -194,17 +198,20 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
 
         y_f_mse = y_interm.cpu().detach().flatten().numpy()
         y_t_mse = y_test[i].cpu().detach().flatten().numpy()
-        y_f_mse = unscale(y_f_mse, scale.max, scale.min)
-        y_t_mse = unscale(y_t_mse, scale.max, scale.min)
 
         # Physical post-processing power should be between 0 and CS power
         if phys:
             y_f_mse[y_f_mse<0] = 0
-            if ((i+1)*24*30) < len(cs_power):
-                y_max = cs_power[i*24*30:(i+1)*24*30]
-            else:
-                y_max = cs_power[i*24*30:]
-            y_f_mse[y_f_mse > y_max] = y_max[y_f_mse > y_max]
+            y_f_mse[y_f_mse>1] = 1
+
+        #Unscale it again to have values in Watt
+        if ((i+1)*24*30) < len(cs_power):
+            y_max = cs_power[i*24*30:(i+1)*24*30]
+        else:
+            y_max = cs_power[i*24*30:]
+        y_f_mse = unscale(y_f_mse, y_max, scale.max, scale.min)
+        y_t_mse = unscale(y_t_mse, y_max, scale.max, scale.min)
+
 
         mse.append(np.mean(np.square(y_f_mse-y_t_mse)))
         print(f"Currently in month {i}. MSE for this month is: {mse[-1]}")
@@ -262,10 +269,12 @@ def eval_plotter(truth, forecast, start="2021-08-01", end="2022-08-03"):
 
 
 
-def unscale(y, max, min):
+def unscale(y, cs_power, max, min):
     max= max['P']
     min = min['P']
     y = y*(max-min) + min
+    y = y*cs_power
+
 
     return y
 

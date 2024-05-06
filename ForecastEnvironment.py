@@ -41,7 +41,7 @@ for i in models:
             try:
                 hp.load(i, 3)
             except:
-                hp.load(0, 3)
+                hp.load(0, 1)
             match i:
                 case 0:
                     phys = False
@@ -81,7 +81,7 @@ for i in models:
                 ftr_string+= "no_weather_"
             ftr_string += phys_str
             scale = Scale()
-            scale.load(j, dataset_name)
+            scale.load(j, dataset_name, phys)
             if os.path.isfile(ftr_string):
                 with open(ftr_string, 'rb') as f:
                         features = pickle.load(f)
