@@ -71,7 +71,7 @@ def HP_tuning(domain, model):
 
     #Sampler initialisation
     try:
-        sampler = pickle.load(open(f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}_{step}.pkl", "rb"))
+        sampler = pickle.load(open(f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}.pkl", "rb"))
         print("Using existing sampler.") 
     except: #If there is no sampler present, make a new one
         sampler = samplers.TPESampler(seed=10)
@@ -107,6 +107,8 @@ def HP_tuning(domain, model):
                 n_units = value
             elif "lr" in key:
                 lr = value
+            elif "Weight_decay" in key:
+                wd = value
             elif "dropout" in key:
                 dropout = value
             elif "Batch_size" in key:
@@ -116,12 +118,12 @@ def HP_tuning(domain, model):
             else:
                 print("This value not stored in hp object")
         if domain == "source":
-            hp = hyperparameters_source(optimizer, lr, n_layers, n_units, dropout, batch_size)
+            hp = hyperparameters_source(optimizer, lr, n_layers, n_units, dropout, batch_size, wd)
         else:
             hp_source = hyperparameters_source()
             hp_source.load(model,3) #Load hyperparam source for n_layers and stuf
             hp = hyperparameters_target(hp_source.optimizer_name, lr, hp_source.n_layers, hp_source.n_nodes,
-                                        hp_source.dropout, batch_size) #Only parameters you optimized
+                                        hp_source.dropout, batch_size, wd) #Only parameters you optimized
         hp.save(model)
         with open(f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}.pkl", "wb") as fout: 
             pickle.dump(study.sampler, fout)

@@ -151,7 +151,7 @@ def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MS
 
     # Initialize the trainer
     training = Training(model, X_train, y_train, X_test, y_test, epochs, learning_rate=hp.lr, criterion=criterion, 
-                        trial=hp.trial, optimizer_name=hp.optimizer_name, batch_size=hp.batch_size, infer_day=infer_day)
+                        trial=hp.trial, optimizer_name=hp.optimizer_name, weight_decay = hp.wd, batch_size=hp.batch_size, infer_day=infer_day)
 
     # Train the model and return the trained parameters and the best iteration
     if hp.trial is None:
@@ -225,7 +225,7 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
         if i != len(X_test)-1:
             train_timer = Timer()
             training = Training(model, X_train[i], y_train[i], None, None, epochs, learning_rate=hp.lr, criterion=criterion, 
-                            trial=hp.trial, optimizer_name=hp.optimizer_name, batch_size=hp.batch_size)
+                            trial=hp.trial, optimizer_name=hp.optimizer_name, weight_decay = hp.wd, batch_size=hp.batch_size)
             avg_error, state_dict = training.fit()
             train_timer.stop()
             model.load_state_dict(state_dict)

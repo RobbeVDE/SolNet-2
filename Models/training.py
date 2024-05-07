@@ -35,6 +35,7 @@ class Training:
             optimizer_name,
             trial=None,
             batch_size=32,
+            weight_decay = 0,
             learning_rate=0.001,
             criterion=torch.nn.MSELoss(),
             infer_day = None
@@ -70,6 +71,8 @@ class Training:
             days = y_train.shape[0]
             self.testing = False
 
+        self.wd = weight_decay
+
         self.months = round(days / 30.5)
 
         self.infer_day = infer_day
@@ -99,8 +102,8 @@ class Training:
         avg_test_error = []
         state_dict_list = []
         
-        optimizer = getattr(optim, self.optimizer_name)(self.model.parameters(), lr=self.lr, weight_decay=1e-5)
-
+        optimizer = getattr(optim, self.optimizer_name)(self.model.parameters(), lr=self.lr, weight_decay=self.wd)
+        print(optimizer)
         early_stopper = EarlyStopper(patience=5, min_delta=0.005)
         for epoch in range(self.epochs):
             num_train_batches = 0
@@ -198,7 +201,7 @@ class Training:
             avg_test_error = []
             state_dict_list = []
 
-            optimizer = getattr(optim, self.optimizer_name)(self.model.parameters(), lr=self.lr)
+            optimizer = getattr(optim, self.optimizer_name)(self.model.parameters(), lr=self.lr, weight_decay=self.wd)
 
             print(f'FOLD {fold}')
             print('-----------------------')
