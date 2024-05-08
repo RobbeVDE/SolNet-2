@@ -48,7 +48,7 @@ def objective(trial, dataset, source_state_dict, scale, case_n):
     wd = trial.suggest_loguniform("Weight_decay_target",1e-8,1e-1)
   
     hp_source = hyperparameters_source()
-    hp_source.load(case_n, 3)
+    hp_source.load(case_n)
     hp = hyperparameters_target(hp_source.optimizer_name,lr_target, hp_source.n_layers, hp_source.n_nodes, hp_source.dropout, 
                                 batch_size_target, wd, trial,source_state_dict= source_state_dict)
 

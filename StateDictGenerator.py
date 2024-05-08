@@ -45,7 +45,7 @@ else:
     phys_str= "no_phys.pkl"    
 
 
-ftr_file = "hyperparameters/features_"
+ftr_file = "features/ft_"
 if model == 2:#NO weather features
     ftr_file += "no_weather_"
 ftr_file += phys_str
@@ -55,7 +55,7 @@ if os.path.isfile(ftr_file):
     with open(ftr_file, 'rb') as f:
         features = pickle.load(f)
 else:
-    features = ['temperature_1_5m', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'P_24h_shift']
+    features = ['temperature_1_5m', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'P_24h_shift', 'total_cloud_amount']
 
 scale = Scale()
 scale.load(installation_int, dataset_name, phys)

@@ -103,7 +103,6 @@ class Training:
         state_dict_list = []
         
         optimizer = getattr(optim, self.optimizer_name)(self.model.parameters(), lr=self.lr, weight_decay=self.wd)
-        print(optimizer)
         early_stopper = EarlyStopper(patience=5, min_delta=0.005)
         for epoch in range(self.epochs):
             num_train_batches = 0

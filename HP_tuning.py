@@ -74,14 +74,14 @@ def HP_tuning(domain, model):
         sampler = pickle.load(open(f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}.pkl", "rb"))
         print("Using existing sampler.") 
     except: #If there is no sampler present, make a new one
-        sampler = samplers.TPESampler(seed=10)
+        sampler = samplers.RandomSampler(seed=10)
         print("Initialize a new sampler")
 
     study = optuna.create_study(study_name=study_name, storage=storage_name, direction="minimize", 
-                                load_if_exists=True, sampler=sampler, pruner=optuna.pruners.PercentilePruner(25.0, n_warmup_steps=5, interval_steps=1))
+                                load_if_exists=True, sampler=sampler, pruner=optuna.pruners.MedianPruner(n_warmup_steps=5))
     try:        
-        n_trials = 200
-        study.optimize(objective, n_trials=n_trials)
+        n_trials = 500
+        study.optimize(objective, n_trials=500)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
 
