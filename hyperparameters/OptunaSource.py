@@ -39,7 +39,7 @@ def objective(trial, dataset, source_state_dict, scale, case_n):
     optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
     lr = trial.suggest_float("lr_source", 1e-6, 1e-1, log=True)
 
-    n_layers = trial.suggest_int("n_layers_source", 1, 3)
+    n_layers = 1 #trial.suggest_int("n_layers_source", 1, 3)
 
     n_nodes = trial.suggest_int("n_units_source",4,800)
 

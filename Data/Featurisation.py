@@ -211,6 +211,7 @@ class Featurisation:
 
             cs_power =  pvsys.get_ac('pvwatts', dc_power)
             self.data[i]["CS_power"] = cs_power
+            self.data[i]["T_PV"] = temp_cell
 
 
         return self.data
@@ -243,6 +244,8 @@ class Featurisation:
             power_24h[mask] = power_24h[mask]/cs_power[mask]
 
         return self.data
+    
+      
     
 def data_handeler(installation_int = 0, source=None, target=None, eval=None, transform = True, month_source=False):
     """

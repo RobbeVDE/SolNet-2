@@ -16,7 +16,7 @@ from Data.Featurisation import data_handeler
 import torch
 from scale import Scale
 import pandas as pd
-from  hyperparameters import hyperparameters
+from  hyperparameters.hyperparameters import hyperparameters_target
 from evaluation.metric_processor import metric_processor_target
 from Models.models import target
 import numpy as np
@@ -37,7 +37,7 @@ else:
 for i in models:
     for j in sites:
         if i <= 5:
-            hp = hyperparameters.hyperparameters_target()
+            hp = hyperparameters_target()
             try:
                 hp.load(i)
             except:

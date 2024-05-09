@@ -1,3 +1,6 @@
-from Data.Featurisation import data_handeler
-
-source_data, _,_ = data_handeler(0,'nwp','nwp','nwp')
+from hyperparameters.hyperparameters import hyperparameters_target
+import pickle
+with open(f"hyperparameters/HP_target_{0}.pkl", 'rb') as f:
+    hp = pickle.load(f)
+hp.wd =5e-8
+hp.save(0)
