@@ -78,7 +78,7 @@ class hyperparameters_target():
 
 
 if __name__ == "__main__":
-    model = 2 
+    model =  3
     custom = False
     
     n_layers = 1
@@ -102,9 +102,9 @@ if __name__ == "__main__":
         hp.save(model)
     else:
         import optuna
-        domain = "source"
+        domain = "target"
         storage_name = f"sqlite:///HP_{domain}.db"
-        study_name = f"no_weather | Physics: False | TL: True"
+        study_name = f"nwp | Physics: False | TL: False"
 
         study = optuna.load_study(study_name=study_name, storage=storage_name)
         print(study)
@@ -125,17 +125,15 @@ if __name__ == "__main__":
                 dropout = value
             elif "Batch_size" in key:
                 batch_size = value
-            elif "optimizer" in key:
+            elif "Optimize" in key:
                 optimizer = value
             else:
                 print("This value not stored in hp object")
         if domain == "source":
             hp = hyperparameters_source(optimizer, lr, n_layers, n_units, dropout, batch_size, wd)
         else:
-            hp_source = hyperparameters_source()
-            hp_source.load(model) #Load hyperparam source for n_layers and stuf
-            hp = hyperparameters_target(hp_source.optimizer_name, lr, hp_source.n_layers, hp_source.n_nodes,
-                                        hp_source.dropout, batch_size, wd) #Only parameters you optimized
+            hp = hyperparameters_target(optimizer, lr, n_layers, n_units,
+                                        dropout, batch_size, wd) #Only parameters you optimized
         hp.save(model)
         
     

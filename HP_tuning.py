@@ -117,12 +117,16 @@ def HP_tuning(domain, model):
                 optimizer = value
             else:
                 print("This value not stored in hp object")
+        n_layers = 1
         if domain == "source":
             hp = hyperparameters_source(optimizer, lr, n_layers, n_units, dropout, batch_size, wd)
         else:
-            hp_source = hyperparameters_source()
-            hp_source.load(model,3) #Load hyperparam source for n_layers and stuf
-            hp = hyperparameters_target(hp_source.optimizer_name, lr, hp_source.n_layers, hp_source.n_nodes,
+            if model in [3,4]:
+                hp = hyperparameters_target(optimizer_name, lr, n_layers, n_nodes, dropout, batch_size, wd)
+            else:
+                hp_source = hyperparameters_source()
+                hp_source.load(model) #Load hyperparam source for n_layers and stuf
+                hp = hyperparameters_target(hp_source.optimizer_name, lr, hp_source.n_layers, hp_source.n_nodes,
                                         hp_source.dropout, batch_size, wd) #Only parameters you optimized
         hp.save(model)
         with open(f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}.pkl", "wb") as fout: 
