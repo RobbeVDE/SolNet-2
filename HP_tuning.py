@@ -45,9 +45,11 @@ def HP_tuning(domain, model):
     if domain == "source":
         from hyperparameters.OptunaSource import objective
         dataset = source_data
+        patience = 5
     elif domain == "target":
         from hyperparameters.OptunaTa import objective
         dataset = target_data
+        patience = 2
         if TL:  
             source_state_file = f"Models/source/{dataset_name}_{installation_int}_"
             source_state_file += phys_str          
@@ -78,7 +80,7 @@ def HP_tuning(domain, model):
         print("Initialize a new sampler")
 
     study = optuna.create_study(study_name=study_name, storage=storage_name, direction="minimize", 
-                                load_if_exists=True, sampler=sampler, pruner=optuna.pruners.MedianPruner(n_warmup_steps=5))
+                                load_if_exists=True, sampler=sampler, pruner=optuna.pruners.MedianPruner(n_warmup_steps=patience))
     try:        
         n_trials = 500
         study.optimize(objective, n_trials=500)
