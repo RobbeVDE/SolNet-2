@@ -197,7 +197,7 @@ class Featurisation:
                                                         dni_extra=dni_extra, model='perez',solar_azimuth=solar_position['azimuth'])
             
             poa = POA_irrad['poa_global'].fillna(0)
-
+            csi = irradiance.clearsky_index(self.data[i]["downward_surface_SW_flux"], ghi)    
 
             temp_cell = temperature.fuentes(poa, temp, wind_speed, 49, wind_height=wind_height,
                                                 surface_tilt=tilt)
@@ -212,7 +212,7 @@ class Featurisation:
             cs_power =  pvsys.get_ac('pvwatts', dc_power)
             self.data[i]["CS_power"] = cs_power
             self.data[i]["T_PV"] = temp_cell
-
+            self.data[i]["csi"] = csi
 
         return self.data
     
