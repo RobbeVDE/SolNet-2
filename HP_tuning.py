@@ -141,14 +141,13 @@ def HP_tuning(domain, model):
         print("Sampler saved succesfully.")
 
 if __name__ == "__main__":
-    manual_enter = True
+    manual_enter = False
     if manual_enter:
         model = int(input("Specify model:\n 0. TL(no phys)               | 4. target(no S, phys)) |  \n 1. TL(phys)                  | 5. TL(era5, no phys)   |  \n 2. TL(no weather cov)        | 6. TL(era5, phys)      | 10. CNN-LSTM ?? \n 3. target(no S, no phys))    | 7. biLSTM              | \n"))
         domain = str(input("Domain: Enter source or target \n"))  # Unique identifier of the study.
-        
+        HP_tuning(domain, model)
     else:
-        domain = "source"
-        dataset_name = "nwp"
-        transfo = False
-        TL = True
-    HP_tuning(domain,model)
+        model_list = [0,1,5,6]
+        domain = "target"
+        for model in model_list:
+            HP_tuning(domain,model)
