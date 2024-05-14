@@ -124,7 +124,7 @@ def HP_tuning(domain, model):
             hp = hyperparameters_source(optimizer, lr, n_layers, n_units, dropout, batch_size, wd)
         else:
             if model in [3,4]:
-                hp = hyperparameters_target(optimizer_name, lr, n_layers, n_nodes, dropout, batch_size, wd)
+                hp = hyperparameters_target(optimizer, lr, n_layers, n_units, dropout, batch_size, wd)
             else:
                 hp_source = hyperparameters_source()
                 hp_source.load(model) #Load hyperparam source for n_layers and stuf
@@ -141,7 +141,7 @@ def HP_tuning(domain, model):
         print("Sampler saved succesfully.")
 
 if __name__ == "__main__":
-    manual_enter = False
+    manual_enter = True
     if manual_enter:
         model = int(input("Specify model:\n 0. TL(no phys)               | 4. target(no S, phys)) |  \n 1. TL(phys)                  | 5. TL(era5, no phys)   |  \n 2. TL(no weather cov)        | 6. TL(era5, phys)      | 10. CNN-LSTM ?? \n 3. target(no S, no phys))    | 7. biLSTM              | \n"))
         domain = str(input("Domain: Enter source or target \n"))  # Unique identifier of the study.
