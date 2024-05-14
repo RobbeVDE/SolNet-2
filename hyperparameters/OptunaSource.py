@@ -36,18 +36,18 @@ def objective(trial, dataset, source_state_dict, scale, case_n):
         features = pickle.load(f)
  
 # Generate the optimizers and hyperparameters
-    optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
+    optimizer_name = "Adam" #trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
     lr = trial.suggest_float("lr_source", 1e-6, 1e-1, log=True)
 
     n_layers = 1 #trial.suggest_int("n_layers_source", 1, 3)
 
-    n_nodes = trial.suggest_int("n_units_source",4,800)
+    n_nodes = trial.suggest_int("n_units_source",4,1000)
 
     dropout = trial.suggest_float("dropout_l", 0.1, 0.5)
 
     batch_size = trial.suggest_int("Batch_size_source", 4,128)
 
-    wd = trial.suggest_float("Weight_decay_source",1e-8,1e-1, log=True)
+    wd = trial.suggest_float("Weight_decay_source",1e-9,1e-1, log=True)
 
     hp = hyperparameters_source(optimizer_name, lr, n_layers, n_nodes, dropout, batch_size, wd, trial)
     

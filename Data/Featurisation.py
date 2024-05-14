@@ -145,8 +145,8 @@ class Featurisation:
             ghi = self.data[i]["downward_surface_SW_flux"]
             pres = self.data[i]["pressure_MSL"] *100
             solar_position = site.get_solarposition(times=times)
-            dni_dirint = irradiance.dirint(ghi, solar_position.zenith, times, pres)
-            df_dirint = irradiance.complete_irradiance(solar_position.apparent_zenith, ghi, dni=dni_dirint, dhi=None)
+            dni_dirint = irradiance.disc(ghi, solar_position.zenith, times, pres)
+            df_dirint = irradiance.complete_irradiance(solar_position.apparent_zenith, ghi, dni=dni_dirint.dni, dhi=None)
             self.data[i][DHI_name] = df_dirint.dhi
             self.data[i][DNI_name] = df_dirint.dni
         return self.data
@@ -247,7 +247,7 @@ class Featurisation:
     
       
     
-def data_handeler(installation_int = 0, source=None, target=None, eval=None, transform = True, month_source=False):
+def data_handeler(installation_int = 0, source=None, target=None, eval=None, transform = True, month_source=False, HP_tuning = True):
     """
     Add explation, maybe more general power function if we use more test setups
     RETURNS source data, target_data, eval_data
@@ -268,9 +268,12 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
     if month_source:   
         source_range = pd.date_range("2018-08-01", "2018-08-31 23:00", freq='h', tz="UTC")
     else:
-        source_range = pd.date_range("2016-05-01","2019-04-30 23:00", freq='h', tz="UTC")
-
-    target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC")
+        if HP_tuning:
+            source_range = pd.date_range("2017-05-01","2019-04-30 23:00", freq='h', tz="UTC")
+            target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC")
+        else:
+            source_range = pd.date_range("2017-05-01","2020-04-30 23:00", freq='h', tz="UTC")
+            target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC") #Not used for source training so dont care
     eval_range = pd.date_range(start, end, tz="UTC", freq='h')
 
     #Check if running in Google Colab
@@ -353,6 +356,11 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         data.data = data.cyclic_angle('wind_direction_10m')
         data.data = data.add_shift('P') #Shift after inv_limit, otherwise discrepancy
         outlier_list = [False, True, True] #No outliers removed for evaluation as this is not
+
+    for i in range(len(data.data)): #We added this bcs now we merge on outer of indices but lot of missing day data, now we want to have accurate regression so we do like this       
+        data.data[i] = data.data[i].dropna()
+
+    if source != "no_weather":
         data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
         if installation_int == 2: #NWP Global only had GHI
             data.data = data.decomposition(lat, lon)
@@ -360,10 +368,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         data.data = data.add_shift('P')
         
 
-    for i in range(len(data.data)): #We added this bcs now we merge on outer of indices but lot of missing day data, now we want to have accurate regression so we do like this
-        
-        data.data[i] = data.data[i].dropna()
-
+    
     if transform:
         data.data = data.PoA(lat, lon, tilt, azimuth)
         data.data = data.clearsky_power(lat, lon, peakPower, tilt, azimuth)
@@ -375,7 +380,6 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         target_dataset = data.data[1]
     if eval is not None:
         eval_dataset= data.data[0]
-    
     return source_dataset, target_dataset, eval_dataset 
 
 

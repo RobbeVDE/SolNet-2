@@ -182,12 +182,12 @@ class Training:
 
         print('Best Epoch: ' + str(argmin))
 
-        if self.testing:
-            plt.plot(avg_train_error, label='train error ' + str(self.months) + ' months')
-            plt.plot(avg_test_error, label='test error ' + str(self.months) + ' months')
-            plt.legend()
+        # if self.testing:
+        #     plt.plot(avg_train_error, label='train error ' + str(self.months) + ' months')
+        #     plt.plot(avg_test_error, label='test error ' + str(self.months) + ' months')
+        #     plt.legend()
 
-            plt.show()
+        #     plt.show()
 
         return min(avg_error), state_dict_list[argmin]
 
