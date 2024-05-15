@@ -78,11 +78,11 @@ class hyperparameters_target():
 
 
 if __name__ == "__main__":
-    model =  3
+    model =  5
     custom = False
     
     n_layers = 1
-
+    optimizer = "Adam"
     if custom:
         optimizer = "Adam"   
         dropout = 0.3393
@@ -102,9 +102,9 @@ if __name__ == "__main__":
         hp.save(model)
     else:
         import optuna
-        domain = "target"
+        domain = "source"
         storage_name = f"sqlite:///HP_{domain}.db"
-        study_name = f"nwp | Physics: False | TL: False"
+        study_name = f"era5 | Physics: False | TL: True"
 
         study = optuna.load_study(study_name=study_name, storage=storage_name)
         print(study)
