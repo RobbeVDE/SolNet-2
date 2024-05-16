@@ -372,7 +372,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
     if transform:
         data.data = data.PoA(lat, lon, tilt, azimuth)
         data.data = data.clearsky_power(lat, lon, peakPower, tilt, azimuth)
-        data.data = data.deseasonalise(lat, lon)
+        #data.data = data.deseasonalise(lat, lon)
 
     if source is not None:
         source_dataset = data.data[2]

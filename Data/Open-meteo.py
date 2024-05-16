@@ -5,7 +5,7 @@ import pandas as pd
 from retry_requests import retry
 
 
-install_int = 2
+install_int = 3
 metadata = pd.read_pickle("Data/Sites/metadata.pkl")
 metadata = metadata.iloc[install_int]
 lat = metadata['Latitude']
@@ -21,7 +21,7 @@ url = "https://archive-api.open-meteo.com/v1/archive"
 params = {
 	"latitude": lat,
 	"longitude": lon,
-	"start_date": "2016-05-01",
+	"start_date": "2004-12-31",
 	"end_date": "2021-12-31",
 	"hourly": ["temperature_2m", "relative_humidity_2m", "pressure_msl", "cloud_cover", "wind_speed_10m", "wind_direction_10m", "shortwave_radiation", "diffuse_radiation", "direct_normal_irradiance"],
 	"timezone": "GMT",
@@ -66,6 +66,10 @@ hourly_data["diffuse_radiation"] = hourly_diffuse_radiation
 hourly_data["direct_normal_irradiance"] = hourly_direct_normal_irradiance
 
 hourly_dataframe = pd.DataFrame(data = hourly_data)
+hourly_dataframe["shortwave_radiation"] = hourly_dataframe["shortwave_radiation"].shift(-1)
+hourly_dataframe["diffuse_radiation"] = hourly_dataframe["diffuse_radiation"].shift(-1)
+hourly_dataframe["direct_normal_irradiance"] = hourly_dataframe["direct_normal_irradiance"].shift(-1)
 hourly_dataframe.set_index('date', inplace=True)
-hourly_dataframe.to_pickle(f'Data/Sites/Reanalysis_{install_int}.pickle')
-print(hourly_dataframe)
+
+hourly_dataframe.to_pickle(f'Data/Sites/Reanalysis_{install_int}.pkl')
+print(hourly_dataframe.head(50))

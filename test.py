@@ -1,4 +1,4 @@
 import pandas as pd
 
-df = pd.read_pickle("NL_2/CEDA_data_NL3.pickle")
+df = pd.read_pickle("evaluation/source/metrics.pkl")
 print(df)

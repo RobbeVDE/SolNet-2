@@ -183,7 +183,7 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
         cs_power = dataset["CS_power"]
         cs_power = cs_power.to_numpy()
         cs_power = cs_power[lags:] #Cannot include first data bcs these are lags
-        phys = True
+        phys = False
     except:
         phys=False
     for i in range(len(X_test)):

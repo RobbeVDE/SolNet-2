@@ -9,7 +9,7 @@ cache_session = requests_cache.CachedSession('.cache', expire_after = -1)
 retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
 openmeteo = openmeteo_requests.Client(session = retry_session)
 
-install_int = 0
+install_int = 3
 metadata = pd.read_pickle("Data/Sites/metadata.pkl")
 metadata = metadata.iloc[install_int]
 lat = metadata['Latitude']
@@ -20,7 +20,7 @@ url = "https://archive-api.open-meteo.com/v1/archive"
 params = {
 	"latitude": lat,
 	"longitude": lon,
-	"start_date": "2016-05-01",
+	"start_date": "2004-12-31",
 	"end_date": "2022-12-31",
 	"hourly": "is_day"
 }
