@@ -1,4 +1,6 @@
-import pandas as pd
+import optuna
+from optuna.trial import TrialState
 
-df = pd.read_pickle("NL_2/CEDA_data_NL3.pickle")
-print(df)
+study = optuna.load_study(study_name="era5 | Physics: True | TL: True", storage="sqlite:///HP_target.db")
+
+print(len(study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])))
