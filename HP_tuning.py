@@ -148,7 +148,7 @@ if __name__ == "__main__":
         domain = str(input("Domain: Enter source or target \n"))  # Unique identifier of the study.
         HP_tuning(domain, model)
     else:
-        model_list = [0,1,2,3,4,5,6]
+        model_list = [3,4,5,6]
         domain = "target"
         for model in model_list:
             HP_tuning(domain,model)

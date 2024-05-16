@@ -57,7 +57,7 @@ def objective(trial, dataset, source_state_dict, scale, case_n):
     if case_n in [3,4]: #THis is only target model so also include layers and stuff
         n_units = trial.suggest_int("n_units",4,800)
         dropout = trial.suggest_float("dropout", 0.1, 0.5)
-        optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
+        optimizer_name = "Adam" #trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
         n_layers = 1
         hp = hyperparameters_target(optimizer_name, lr_target, n_layers, n_units, dropout, batch_size_target, wd, trial)
     else:
