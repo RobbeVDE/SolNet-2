@@ -76,7 +76,7 @@ def HP_tuning(domain, model):
         sampler = pickle.load(open(f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}.pkl", "rb"))
         print("Using existing sampler.") 
     except: #If there is no sampler present, make a new one
-        sampler = samplers.RandomSampler(seed=10)
+        sampler = samplers.RandomSampler(seed=49)
         print("Initialize a new sampler")
 
     study = optuna.create_study(study_name=study_name, storage=storage_name, direction="minimize", 
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         domain = str(input("Domain: Enter source or target \n"))  # Unique identifier of the study.
         HP_tuning(domain, model)
     else:
-        model_list = [3,4,5,6]
+        model_list = [5,6]
         domain = "target"
         for model in model_list:
             HP_tuning(domain,model)
