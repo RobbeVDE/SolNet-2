@@ -76,7 +76,6 @@ def persistence(dataset):
     print(error)
     times = {'Inference Time': [infer_timer.elapsed_time()/13]*13} #Just assume it takes same amount of time for each month which makes sense
     forecasts = list(powers["P_24h_shift"].values)
-    print(forecasts)
 
     return error, times, forecasts
 
@@ -126,7 +125,6 @@ def physical(dataset, tilt, azimuth, peakPower, peakInvPower, temp_coeff=-0.004,
     times = {'Inference Time': [infer_timer.elapsed_time()/13]*13} #Just assume it takes same amount of time for each month which makes sense
 
     forecast = list(forecast.values)
-    print(forecast)
 
 
     return error, times, forecast

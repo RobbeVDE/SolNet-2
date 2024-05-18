@@ -114,8 +114,7 @@ class Tensorisation:
                                             self.lags,
                                             self.forecast_period, test_len).squeeze(-1)
             
-            if feature == "P_24h_shift":
-                i_shift = i
+            
 
             # Make the target vector if the feature is our target
         y_tensor = torch.tensor(self.data['P']).type(torch.float32)

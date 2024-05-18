@@ -29,22 +29,21 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 ctn_eval = False #Loop trough all models and sites
 if ctn_eval:
-    models = range(9)
+    models = range(8,10)
     sites = list(range(4))
-    sites.remove(1)
+    
 else:
     models = [int(input("Specify model:\n 0. TL(no phys)               | 4. target(no S, phys)) | 8. physical \n 1. TL(phys)                  | 5. TL(era5, no phys)   | 9. persistence \n 2. TL(no weather cov)        | 6. TL(era5, phys)      | 10. CNN-LSTM ?? \n 3. target(no S, no phys))    | 7. biLSTM              | 11. ARIMA ?? \n"))]
     sites = [int(input("Specify site: \n 0. NL 1       | 3. UK \n 1. NL 2        |   \n 2. Costa Rica  | \n"))]
 for i in models:
     for j in sites:
         print(f"Currently training model: {i}, for site {j}")
-        if i <= 5:
+        if i <= 6:
             hp = hyperparameters_target()
             try:
                 hp.load(i)
             except:
                 hp.load(0)
-            hp.lr = 1e-6
             match i:
                 case 0:
                     phys = False
@@ -94,17 +93,15 @@ for i in models:
             accur, timer, forecasts = target(eval_dataset, features, hp, scale, WFE = True)
             
 
-    else:
-        match i:
-            case 9:
-                for j in sites:
+        else:
+            match i:
+                case 9:
                     _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", False)
                     accur, timer, forecasts = md.persistence(eval_dataset)
-                   
-            case 8:
-                for j in sites:
+                    
+                case 8:
                     _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", True)
-                    metadata = pd.read_pickle("Data/sites/metadata.pkl")
+                    metadata = pd.read_pickle("Data/Sites/metadata.pkl")
                     metadata_id = metadata.loc[j]
                     tilt = metadata_id["Tilt"]
                     peakPower = metadata_id["Installed Power"]
@@ -113,7 +110,7 @@ for i in models:
                     lon = metadata_id["Longitude"]
                     inv_power = metadata_id["Inverter Power"]
                     accur, timer, forecasts = md.physical(eval_dataset, tilt, azimuth, peakPower, inv_power, latitude=lat, longitude=lon)
-                    
+                    forecasts = forecasts[24:]
         metric_processor_target(accur, timer, i,j)
         df_forecasts = pd.Series(forecasts, index=eval_dataset.index[24:], name="P_DA")  
         df_forecasts.to_pickle(f"DA_forecasts/DA_{i}_{j}")      

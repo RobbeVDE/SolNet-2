@@ -45,7 +45,7 @@ peakPower = metadata_id["Watt Peak"]
 azimuth = metadata_id["Orientation"]
 latitude = metadata_id["Latitude"]
 longitude = metadata_id["Longitude"]
-inv_power = peakPower
+inv_power = 2000
 start = pd.Timestamp("2020-05-01", tz="UTC")
 end = pd.Timestamp("2021-04-30 23:00", tz="UTC")
 
@@ -90,14 +90,15 @@ inv_power = peakPower
 
 total_df = pd.read_pickle("UK/ProdUK.pkl")
 print(total_df)
-total_df['datetime'] = pd.to_datetime(total_df['datetime'], utc=True)
-total_df = total_df.set_index('datetime')
-total_df = total_df.shift(2) #NOT TOTALLY SURE ABOUT THAT
+# total_df['datetime'] = pd.to_datetime(total_df['datetime'], utc=True)
+# total_df = total_df.set_index('datetime')
 
-total_df = total_df.drop('ss_id', axis=1)
+# total_df = total_df.drop('ss_id', axis=1)
 total_df = target_renamer(total_df, 'generation_wh')
-#total_df = total_df.tz_localize('UTC')
-total_df = total_df.resample('h').sum()
+
+total_df = total_df.tz_localize('UTC')
+total_df = total_df
+# total_df = total_df.resample('h').sum()
 print(total_df.max())
 total_df.to_pickle('Data/Sites/PV_3.pkl')
 metadata_df.iloc[3,:] = ["UK", peakPower, inv_power, tilt, azimuth, latitude, longitude, start, end]
