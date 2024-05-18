@@ -238,6 +238,7 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
 
     
     if hp.trial is not None: #If HP report average mse
+        mse = mse[1:] #Discard fitst mse bcs thats garbage
         error = np.mean(mse)
     else:
         error  = np.sqrt(mse)

@@ -89,7 +89,6 @@ for i in models:
                         features = pickle.load(f)
             else:
                 features = ['temperature_1_5m', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'P_24h_shift']
-            print(len(features))
             accur, timer, forecasts = target(eval_dataset, features, hp, scale, WFE = True)
             
 

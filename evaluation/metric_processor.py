@@ -29,8 +29,11 @@ def metric_processor_target(accuracy, timer, i, j):
         times =  pd.DataFrame(index=my_index, columns=my_time_columns)
 
     
-
-    avg_acc =  np.sqrt((np.sum(np.square(accuracy)))/n_months)
+    if i in [3,4]:
+        accur_for_avg = accuracy[1:] #Dont include first month bcs that is just awful bad
+    else:
+        accur_for_avg = accuracy
+    avg_acc =  np.sqrt((np.sum(np.square(accur_for_avg)))/n_months)
     avg_rmse.loc[j,i] = avg_acc
     rmse.loc[(j,slice(0,len(accuracy)-1)), i] = accuracy
 
