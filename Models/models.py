@@ -54,11 +54,11 @@ def target(dataset, features, hp, scale, WFE):
         transfer_model.load_state_dict(hp.source_state_dict)
     
     if WFE:
-        avg_error, times = WF_trainer(dataset, features, hp, transfer_model, scale=scale) 
+        avg_error, times, forecasts = WF_trainer(dataset, features, hp, transfer_model, scale=scale) 
     else:
         avg_error, times = trainer(dataset, features, hp, transfer_model, scale=scale)
     if hp.trial is None:
-        return avg_error, times
+        return avg_error, times, forecasts
     else:
         return avg_error
 
@@ -75,8 +75,10 @@ def persistence(dataset):
     error = error['rmse'].to_list()
     print(error)
     times = {'Inference Time': [infer_timer.elapsed_time()/13]*13} #Just assume it takes same amount of time for each month which makes sense
+    forecasts = list(powers["P_24h_shift"].values)
+    print(forecasts)
 
-    return error, times
+    return error, times, forecasts
 
 
 def physical(dataset, tilt, azimuth, peakPower, peakInvPower, temp_coeff=-0.004, loss_inv=0.96, latitude=None, longitude=None):
@@ -123,10 +125,11 @@ def physical(dataset, tilt, azimuth, peakPower, peakInvPower, temp_coeff=-0.004,
     error = error['rmse'].to_list()
     times = {'Inference Time': [infer_timer.elapsed_time()/13]*13} #Just assume it takes same amount of time for each month which makes sense
 
+    forecast = list(forecast.values)
+    print(forecast)
 
 
-
-    return error, times
+    return error, times, forecast
 
 def r2_rmse(g):
     rmse = np.sqrt(mean_squared_error(g.iloc[:,0], g.iloc[:,1]))
@@ -138,10 +141,7 @@ def trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn.MS
     tensors = Tensorisation(dataset, 'P', features, lags, forecast_period, domain_min=scale.min,domain_max=scale.max)
     X_train, X_test, y_train, y_test = tensors.tensor_creation()
     
-    # X_train = torch.flip(X_test, [0])
-    # X_test = torch.flip(X_train, [0])
-    # y_train = torch.flip(y_test, [0])
-    # y_test = torch.flip(y_train, [0])
+
     print("Shape of data: ", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
     if hp.gif_plotter:
@@ -174,18 +174,19 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
     
     print("Shape of data: ", X_train[0].shape, X_test[0].shape, y_train[0].shape, y_test[0].shape)
 
-    y_forecast = torch.zeros(len(X_test),30,24)
     # Initialize the trainer
     mse = []
     inf_times = []
     training_times = []
+    y_forecast = []
     try:
         cs_power = dataset["CS_power"]
         cs_power = cs_power.to_numpy()
         cs_power = cs_power[lags:] #Cannot include first data bcs these are lags
-        phys = False
+        phys = True
+        cs_scaling =False  #we do no cs deseasonalisation
     except:
-        phys=False
+        phys = False
     for i in range(len(X_test)):
         model.eval()
         
@@ -206,15 +207,19 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
             y_f_mse[y_f_mse>1] = 1
 
             #Unscale it again to have values in Watt
-            if ((i+1)*24*30) < len(cs_power):
-                y_max = cs_power[i*24*30:(i+1)*24*30]
-            else:
-                y_max = cs_power[i*24*30:]
+            if cs_scaling:
+                if ((i+1)*24*30) < len(cs_power):
+                    y_max = cs_power[i*24*30:(i+1)*24*30]
+                else:
+                    y_max = cs_power[i*24*30:]
+            else: 
+                y_max = 1
         else:
             y_max = 1
         y_f_mse = unscale(y_f_mse, y_max, scale.max, scale.min)
         y_t_mse = unscale(y_t_mse, y_max, scale.max, scale.min)
 
+        y_forecast.extend(y_f_mse.tolist())
 
         mse.append(np.mean(np.square(y_f_mse-y_t_mse)))
         print(f"Currently in month {i}. MSE for this month is: {mse[-1]}")
@@ -240,8 +245,8 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
         error  = np.sqrt(mse)
 
     times = {'Inference Time':inf_times, 'Training Time': training_times}
-
-    return error, times
+    
+    return error, times, y_forecast
 
 def tester(dataset, features, model, scale=None): #Here plotting possibility??
     #In evaluation data the power should be removed and can then be compared

@@ -44,6 +44,7 @@ for i in models:
                 hp.load(i)
             except:
                 hp.load(0)
+            hp.lr = 1e-6
             match i:
                 case 0:
                     phys = False
@@ -90,16 +91,16 @@ for i in models:
             else:
                 features = ['temperature_1_5m', 'relative_humidity_1_5m', 'diffuse_surface_SW_flux', 'direct_surface_SW_flux', 'downward_surface_SW_flux', 'P_24h_shift']
             print(len(features))
-            accur, timer = target(eval_dataset, features, hp, scale, WFE = True)
-            metric_processor_target(accur, timer, i,j)
+            accur, timer, forecasts = target(eval_dataset, features, hp, scale, WFE = True)
+            
 
     else:
         match i:
             case 9:
                 for j in sites:
                     _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", False)
-                    accur, timer = md.persistence(eval_dataset)
-                    metric_processor_target(accur, timer, i,j)
+                    accur, timer, forecasts = md.persistence(eval_dataset)
+                   
             case 8:
                 for j in sites:
                     _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", True)
@@ -111,10 +112,11 @@ for i in models:
                     lat = metadata_id["Latitude"]
                     lon = metadata_id["Longitude"]
                     inv_power = metadata_id["Inverter Power"]
-                    accur, timer = md.physical(eval_dataset, tilt, azimuth, peakPower, inv_power, latitude=lat, longitude=lon)
-                    metric_processor_target(accur, timer, i,j)
-
-        
+                    accur, timer, forecasts = md.physical(eval_dataset, tilt, azimuth, peakPower, inv_power, latitude=lat, longitude=lon)
+                    
+        metric_processor_target(accur, timer, i,j)
+        df_forecasts = pd.Series(forecasts, index=eval_dataset.index[24:], name="P_DA")  
+        df_forecasts.to_pickle(f"DA_forecasts/DA_{i}_{j}")      
 
 
 

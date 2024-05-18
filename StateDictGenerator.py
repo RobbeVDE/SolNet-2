@@ -87,7 +87,7 @@ for model in models:
             hp.bd =False
             accuracy, state_dict, timer = source(source_data, features, hp, scale)
             state_dict = state_dict
-            metric_processor_source(accuracy, timer, model, installation_int)
+            metric_processor_source(accuracy, timer, scale, model, installation_int)
 
             torch.save(state_dict, f"Models/source/{dataset_name}_{installation_int}_{phys_str}")
         else:

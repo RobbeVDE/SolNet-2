@@ -18,7 +18,7 @@ fig, ax = plt.subplots()
 
 im = ax.imshow(image_array[0], animated=True)
 
-animation_fig = animation.FuncAnimation(fig, update, frames=len(image_array), interval=800, blit=True, repeat_delay=True)
+animation_fig = animation.FuncAnimation(fig, update, frames=len(image_array), interval=800, blit=True, repeat=False)
 plt.axis('off')
 plt.show()
 

@@ -272,7 +272,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
             source_range = pd.date_range("2017-05-01","2019-04-30 23:00", freq='h', tz="UTC")
             target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC")
         else:
-            source_range = pd.date_range("2017-05-01","2020-04-30 23:00", freq='h', tz="UTC")
+            source_range = pd.date_range("2017-05-01", start.tz_localize(None) - pd.Timedelta('1h'), freq='h', tz="UTC")
             target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC") #Not used for source training so dont care
     eval_range = pd.date_range(start, end, tz="UTC", freq='h')
 
