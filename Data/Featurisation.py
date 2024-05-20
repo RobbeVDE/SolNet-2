@@ -247,7 +247,7 @@ class Featurisation:
     
       
     
-def data_handeler(installation_int = 0, source=None, target=None, eval=None, transform = True, month_source=False, HP_tuning = True):
+def data_handeler(installation_int = 0, source=None, target=None, eval=None, transform = True, month_source=False, HP_tuning = True, inv_limit = True, decomp = False):
     """
     Add explation, maybe more general power function if we use more test setups
     RETURNS source data, target_data, eval_data
@@ -349,7 +349,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
 
 
     if source != 'no_weather':
-        if transform:
+        if (transform) and inv_limit:
             inv_list = [False, False, True] #Pre-processing only allowed for source_data 
             data.data = data.inverter_limit(inv_limit, inv_list)
 
@@ -362,7 +362,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
 
     if source != "no_weather":
         data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
-        if installation_int == 2: #NWP Global only had GHI
+        if (installation_int == 2) or (decomp): #NWP Global only had GHI
             data.data = data.decomposition(lat, lon)
     else:
         data.data = data.add_shift('P')
