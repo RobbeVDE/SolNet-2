@@ -5,7 +5,7 @@ import pandas as pd
 from retry_requests import retry
 
 
-install_int = 3
+install_int = 0
 metadata = pd.read_pickle("Data/Sites/metadata.pkl")
 metadata = metadata.iloc[install_int]
 lat = metadata['Latitude']
