@@ -247,7 +247,7 @@ class Featurisation:
     
       
     
-def data_handeler(installation_int = 0, source=None, target=None, eval=None, transform = True, month_source=False, HP_tuning = True, inv_limit = True, decomp = False):
+def data_handeler(installation_int = 0, source=None, target=None, eval=None, transform = True, month_source=False, HP_tuning = True, inv_limit = True, decomp = False, nb_source_years=None):
     """
     Add explation, maybe more general power function if we use more test setups
     RETURNS source data, target_data, eval_data
@@ -268,16 +268,27 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
     if month_source:   
         source_range = pd.date_range("2018-08-01", "2018-08-31 23:00", freq='h', tz="UTC")
     else:
-        if HP_tuning:
-            source_range = pd.date_range("2017-05-01","2019-04-30 23:00", freq='h', tz="UTC")
-            target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC")
-        else:
-            if installation_int == 3:
-                source_range = pd.date_range("2016-05-01", start.tz_localize(None) - pd.Timedelta('1h'), freq='h', tz="UTC")
-                target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC") #Not used for source training so dont care
+        if nb_source_years is None:
+            if HP_tuning:
+                source_range = pd.date_range("2017-05-01","2019-04-30 23:00", freq='h', tz="UTC")
+                target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC")
             else:
-                source_range = pd.date_range("2017-05-01", start.tz_localize(None) - pd.Timedelta('1h'), freq='h', tz="UTC")
-                target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC") #Not used for source training so dont care
+                if installation_int == 3:
+                    source_range = pd.date_range("2016-05-01", start.tz_localize(None) - pd.Timedelta('1h'), freq='h', tz="UTC")
+                    target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC") #Not used for source training so dont care
+                else:
+                    source_range = pd.date_range("2017-05-01", start.tz_localize(None) - pd.Timedelta('1h'), freq='h', tz="UTC")
+                    target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC") #Not used for source training so dont care
+        else:
+            end_source = start.tz_localize(None) - pd.Timedelta('1h')
+            end_year = end_source.year
+            start_year = end_year- nb_source_years
+            start_source = pd.to_datetime(f'{start_year}-05-01')
+            source_range = pd.date_range(start_source, end_source, freq='h', tz="UTC")
+
+            target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC") #Not used for source training so dont care
+
+
    
     
     eval_range = pd.date_range(start, end, tz="UTC", freq='h')
