@@ -8,7 +8,7 @@ Sites:
 
 We want all azimuths in range [-180,180] where 0 means south
 """
-n_sites = 4
+n_sites = 9
 columns = ["Name", "Installed Power", "Inverter Power", "Tilt", "Azimuth", "Latitude", "Longitude", "Start", "End"]
 metadata_df = pd.DataFrame(columns=columns, index=range(n_sites))
 # 0.
@@ -102,6 +102,40 @@ total_df = total_df
 print(total_df.max())
 total_df.to_pickle('Data/Sites/PV_3.pkl')
 metadata_df.iloc[3,:] = ["UK", peakPower, inv_power, tilt, azimuth, latitude, longitude, start, end]
+
+
+
+# Select 5 random sites from the Netherlands
+import random
+random.seed(5)
+sites_list = random.sample(range(50), 5)
+
+for i,site_int in enumerate(sites_list):
+    metadata = pd.read_csv("Data/installations Netherlands.csv", sep=';')
+    metadata = metadata.set_index('id')
+    metadata_id = metadata.iloc[site_int]
+    id = metadata_id.name
+    tilt = metadata_id["Tilt"]
+    peakPower = metadata_id["Watt Peak"]
+    azimuth = metadata_id["Orientation"]
+    latitude = metadata_id["Latitude"]
+    longitude = metadata_id["Longitude"]
+    if i in [0,3]:
+        inv_power=  peakPower
+    else: 
+        inv_power = 2000 #Noticed for all other installations
+    start = pd.Timestamp("2020-05-01", tz="UTC")
+    end = pd.Timestamp("2021-04-30 23:00", tz="UTC")
+
+    power = prodNL.loc[id]
+    power = target_renamer(power, 'watt')
+    power = power.resample('h').mean()
+    power = power.tz_localize('UTC')
+    metadata_df.iloc[4+i,:] = [f"NL_{3+i}", peakPower, inv_power, tilt, azimuth, latitude, longitude, start, end]
+    power.to_pickle(f"Data/Sites/PV_{i+4}.pkl")
+
+
+
 
 print(metadata_df)
 

@@ -48,7 +48,7 @@ for site in sites:
         rmse_np.to_pickle('sensitivity_analysis/nb_features/rmse_no_physics.pkl')
         rmse_np_source.to_pickle('sensitivity_analysis/nb_features/rmse_no_physics_source.pkl')
         df_forecasts = pd.Series(forecasts, index=eval_data.index[24:], name="P_DA")  
-        df_forecasts.to_pickle(f"sensitivity_analysis/nb_features/DA_no_phys.pkl") 
+        df_forecasts.to_pickle(f"sensitivity_analysis/nb_features/DA_{i}_no_phys_{site}.pkl") 
         print(rmse_np_source)
         print(rmse_np)
 
@@ -90,7 +90,7 @@ for site in sites:
         rmse_p.to_pickle('sensitivity_analysis/nb_features/rmse_physics.pkl')
         rmse_p_source.to_pickle('sensitivity_analysis/nb_features/rmse_physics_source.pkl')
         df_forecasts = pd.Series(forecasts, index=eval_data.index[24:], name="P_DA")  
-        df_forecasts.to_pickle(f"sensitivity_analysis/nb_features/DA_phys.pkl") 
+        df_forecasts.to_pickle(f"sensitivity_analysis/nb_features/DA_phys_{i}_{site}.pkl") 
     print(rmse_p_source)
     print(rmse_p)
 

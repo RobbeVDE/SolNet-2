@@ -1,3 +1,6 @@
-import torch
+import pandas as pd
 
-print(torch.cuda.is_available())
+df = pd.DataFrame()
+
+lidt_df = [df]*5
+print(lidt_df)
