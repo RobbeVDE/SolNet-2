@@ -26,7 +26,7 @@ variables = ["temperature_1_5m", "relative_humidity_1_5m","total_cloud_amount","
 
 
 # Define the local directory name to put data in
-ddir="C:/users/Robbe/SolNet-2"  #/users/students/r0778797
+ddir="/users/students/r0778797/SolNet-2"  #/users/students/r0778797
 
 # If directory doesn't exist make it
 if not os.path.isdir(ddir):
