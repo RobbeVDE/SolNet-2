@@ -1,6 +1,5 @@
 import pandas as pd
 
-df = pd.DataFrame()
+df = pd.read_pickle("NL_3/CEDA_data_NL.pickle")
 
-lidt_df = [df]*5
-print(lidt_df)
+print(df)
