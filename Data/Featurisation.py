@@ -366,7 +366,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         mask = sol_pos["zenith"] > 85
         df.loc[mask, 'P'] = 0
         data[i] = df
-    #Add extra variates
+    # Add extra variates
     data = Featurisation(data)
     data.data = data.cyclic_features()
     
@@ -385,7 +385,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         data.data[i] = data.data[i].dropna()
 
     if source != "no_weather":
-        data.data = data.remove_outliers(tolerance=50, outlier_list=outlier_list)
+        data.data = data.remove_outliers(tolerance=100, outlier_list=outlier_list)
         if (installation_int == 2) or (decomp): #NWP Global only had GHI
             data.data = data.decomposition(lat, lon)
     else:
