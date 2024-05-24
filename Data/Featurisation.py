@@ -358,7 +358,14 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
             data.append(merge_slice(range_list[i], power_list[i], covariates, is_day))
         else:
             data.append(merge_slice(range_list[i], power_list[i], covariates))
-
+    site = location.Location(lat,lon, altitude = location.lookup_altitude(lat,lon), tz="UTC")
+    
+    for i, df in enumerate(data):
+        times = df.index
+        sol_pos = site.get_solarposition(times)
+        mask = sol_pos["zenith"] > 85
+        df.loc[mask, 'P'] = 0
+        data[i] = df
     #Add extra variates
     data = Featurisation(data)
     data.data = data.cyclic_features()
