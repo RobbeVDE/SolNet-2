@@ -11,7 +11,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ctn_eval = True #Loop trough all models and sites
 if ctn_eval:
     models = range(9)
-    sites = [3]
+    sites = range(4,9)
     HP_tuning = False
     if HP_tuning:
         sites = [0]

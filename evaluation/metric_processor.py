@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-def metric_processor_target(accuracy, timer, i, j):
-    n_sites = 4
+def metric_processor_target(accuracy, timer, i, j): 
+    n_sites = 8+1
     n_models = 12
     n_months = 13
     #Save mean metrics to put in table in report
@@ -28,7 +28,9 @@ def metric_processor_target(accuracy, timer, i, j):
     except:
         times =  pd.DataFrame(index=my_index, columns=my_time_columns)
 
-    
+    if len(rmse.index) != len(my_index):
+        rmse = rmse.reindex(my_index)
+        times = times.reindex(my_index)
     if i in [3,4]:
         accur_for_avg = accuracy[1:] #Dont include first month bcs that is just awful bad
     else:
