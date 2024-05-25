@@ -60,7 +60,10 @@ def target(dataset, features, hp, scale, WFE):
     if hp.trial is None:
         return avg_error, times, forecasts
     else:
-        return avg_error
+        truth = dataset[31*24:] # 30+1 *24
+        forecast = forecast[30*24:]
+        error = np.mean(np.suare(forecast-truth))
+        return error
 
 
 def persistence(dataset):
@@ -221,7 +224,7 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
 
         mse.append(np.mean(np.square(y_f_mse-y_t_mse)))
         print(f"Currently in month {i}. MSE for this month is: {mse[-1]}")
-        if hp.trial is not None:
+        if (hp.trial is not None) and (i != len(X_test)-1): #We dont want to report last MSE bcs for shorter period
             hp.trial.report(mse[-1], i)
             if hp.trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
@@ -237,11 +240,8 @@ def WF_trainer(dataset, features, hp,  model=None,scale=None, criterion=torch.nn
             training_times.append(np.nan)
 
     
-    if hp.trial is not None: #If HP report average mse
-        mse = mse[1:] #Discard fitst mse bcs thats garbage
-        error = np.mean(mse)
-    else:
-        error  = np.sqrt(mse)
+    
+    error  = np.sqrt(mse)
 
     times = {'Inference Time':inf_times, 'Training Time': training_times}
     

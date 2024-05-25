@@ -270,7 +270,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
     else:
         if nb_source_years is None:
             if HP_tuning:
-                source_range = pd.date_range("2017-05-01","2019-04-30 23:00", freq='h', tz="UTC")
+                source_range = pd.date_range("2016-05-01","2019-04-30 23:00", freq='h', tz="UTC")
                 target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC")
             else:
                 if installation_int == 3:
@@ -364,9 +364,13 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         times = df.index
         sol_pos = site.get_solarposition(times)
         mask = sol_pos["zenith"] > 85
-        df.loc[mask, 'P'] = 0
+        filter_list = ['P', 'downward_surface_SW_flux', 'direct_surface_SW_flux', 'diffuse_surface_SW_flux']
+        df.loc[mask,  filter_list] = 0
+        # mask = (df['downward_surface_SW_flux'] - df['diffuse_surface_SW_flux'] - df["direct_surface_SW_flux"]*np.cos(sol_pos["zenith"])).abs().mean()
+        # print(mask)
         data[i] = df
     # Add extra variates
+
     data = Featurisation(data)
     data.data = data.cyclic_features()
     

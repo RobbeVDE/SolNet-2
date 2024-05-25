@@ -43,7 +43,7 @@ def objective(trial, dataset, source_state_dict, scale, case_n):
 
     n_nodes = trial.suggest_int("n_units_source",4,1000)
 
-    dropout = trial.suggest_float("dropout_l", 0.1, 0.5)
+    dropout = 0 #trial.suggest_float("dropout_l", 0.1, 0.5)
 
     batch_size = trial.suggest_int("Batch_size_source", 4,128)
 

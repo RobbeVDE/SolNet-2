@@ -50,8 +50,10 @@ total_df.drop('date', inplace=True, axis=1)
 
 
 # Direct irradiance is given in plane instead of normal we can however recalculate this with DNI = DirIrrad/cos(zenith)
-
-latitude,longitude = 52.0499, 5.07391
+install_int = 1
+metadata = pd.read_pickle("Data/Sites/metadata.pkl")
+latitude = metadata.loc[install_int, "Latitude"]
+longitude = metadata.loc[install_int, "Longitude"]
 site = location.Location(latitude, longitude, tz='UTC')
 times = total_df.index
 solar_pos = site.get_solarposition(times)

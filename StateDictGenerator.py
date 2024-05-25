@@ -55,7 +55,7 @@ for model in models:
                 case 7:
                     TL = False # Will stop the iteration
         if TL:
-            source_data, target_data, _ = data_handeler(installation_int, dataset_name, "nwp", "nwp", phys, HP_tuning=HP_tuning)
+            source_data, target_data, _ = data_handeler(installation_int, dataset_name, "nwp", "nwp", phys, HP_tuning=HP_tuning, decomp=True)
             if phys:
                 phys_str = "phys.pkl"
             else:

@@ -76,14 +76,13 @@ def HP_tuning(domain, model):
         sampler = pickle.load(open(f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}.pkl", "rb"))
         print("Using existing sampler.") 
     except: #If there is no sampler present, make a new one
-        sampler = samplers.RandomSampler(seed=49)
+        sampler = samplers.TPESampler(seed=28)
         print("Initialize a new sampler")
 
     study = optuna.create_study(study_name=study_name, storage=storage_name, direction="minimize", 
-                                load_if_exists=True, sampler=sampler, pruner=optuna.pruners.MedianPruner(n_warmup_steps=patience))
+                                load_if_exists=True, sampler=sampler, pruner=optuna.pruners.SuccessiveHalvingPruner())
     try:        
-        n_trials = 500
-        study.optimize(objective, n_trials=500)
+        study.optimize(objective, n_trials=100)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
 
@@ -121,6 +120,7 @@ def HP_tuning(domain, model):
                 print("This value not stored in hp object")
         n_layers = 1
         optimizer = "Adam"
+        dropout = 0
         if domain == "source":
             hp = hyperparameters_source(optimizer, lr, n_layers, n_units, dropout, batch_size, wd)
         else:
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         domain = str(input("Domain: Enter source or target \n"))  # Unique identifier of the study.
         HP_tuning(domain, model)
     else:
-        model_list = [5,6]
-        domain = "target"
+        model_list = [0,1,2,5,6]
+        domain = "source"
         for model in model_list:
             HP_tuning(domain,model)

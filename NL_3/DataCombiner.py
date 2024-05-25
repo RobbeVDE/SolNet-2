@@ -3,6 +3,11 @@ import numpy as np
 from pvlib import location
 
 for nl_int in range(3,8):
+    metadata = pd.read_pickle("Data/Sites/metadata.pkl")
+    latitude = metadata.loc[nl_int+1, "Latitude"]
+    longitude = metadata.loc[nl_int+1, "Longitude"]
+    
+
     total_df = pd.read_pickle(f"NL_{nl_int}/CEDA_data_NL.pickle")
     total_df.index = pd.to_datetime(total_df.index, utc=True)
     total_df["wind_speed_10m"] = np.sqrt(total_df["wind_u_10m"] **2+ total_df["wind_v_10m"] **2)
@@ -49,21 +54,19 @@ for nl_int in range(3,8):
 
     # Direct irradiance is given in plane instead of normal we can however recalculate this with DNI = DirIrrad/cos(zenith)
 
-    latitude,longitude = 52.0499, 5.07391
     site = location.Location(latitude, longitude, tz='UTC')
+    print(latitude, longitude)
     times = total_df.index
     solar_pos = site.get_solarposition(times)
     zenith = np.deg2rad(solar_pos['apparent_zenith'])
 
-    # dir_surf_irrad = pd.DataFrame(total_df["direct_surface_SW_flux"])
+    from pvlib import irradiance
+    irr = irradiance.complete_irradiance(solar_pos["zenith"], ghi = total_df["downward_surface_SW_flux"], dhi = total_df["diffuse_surface_SW_flux"], dni=None)
+    mask = irr['dni'].isnull()
+    print(irr[mask].index)
+    irr = irr.fillna(0)
+    total_df.loc[mask, "diffuse_surface_SW_flux"] = total_df.loc[mask,"downward_surface_SW_flux"]
+    total_df["direct_surface_SW_flux"] = irr["dni"]
 
-    # dir_surf_irrad["zenith"] = zenith
-    # dir_surf_irrad["direct_surface_SW_flux"] = dir_surf_irrad["direct_surface_SW_flux"]/np.cos(dir_surf_irrad["zenith"])
-
-    # dir_surf_irrad.loc[(dir_surf_irrad.zenith >= np.deg2rad(85)), 'direct_surface_SW_flux'] = 0
-
-    # total_df["direct_surface_SW_flux"] = dir_surf_irrad['direct_surface_SW_flux']
-
-    total_df["direct_surface_SW_flux"] = total_df["direct_surface_SW_flux"].div(np.cos(zenith), axis=0, fill_value=0)
 
     total_df.to_pickle(f"Data/Sites/NWP_{nl_int+1}.pkl")

@@ -53,16 +53,13 @@ site = location.Location(latitude, longitude, tz='UTC')
 times = total_df.index
 solar_pos = site.get_solarposition(times)
 zenith = np.deg2rad(solar_pos['apparent_zenith'])
+from pvlib import irradiance
+irr = irradiance.complete_irradiance(solar_pos["zenith"], ghi = total_df["downward_surface_SW_flux"], dhi = total_df["diffuse_surface_SW_flux"], dni=None)
+mask = irr['dni'].isnull()
+print(irr[mask].index)
+irr = irr.fillna(0)
+total_df.loc[mask, "diffuse_surface_SW_flux"] = total_df.loc[mask,"downward_surface_SW_flux"]
+total_df["direct_surface_SW_flux"] = irr["dni"]
 
-# dir_surf_irrad = pd.DataFrame(total_df["direct_surface_SW_flux"])
-
-# dir_surf_irrad["zenith"] = zenith
-# dir_surf_irrad["direct_surface_SW_flux"] = dir_surf_irrad["direct_surface_SW_flux"]/np.cos(dir_surf_irrad["zenith"])
-
-# dir_surf_irrad.loc[(dir_surf_irrad.zenith >= np.deg2rad(85)), 'direct_surface_SW_flux'] = 0
-
-# total_df["direct_surface_SW_flux"] = dir_surf_irrad['direct_surface_SW_flux']
-
-total_df["direct_surface_SW_flux"] = total_df["direct_surface_SW_flux"].div(np.cos(zenith), axis=0, fill_value=0)
 
 total_df.to_pickle("Data/Sites/NWP_0.pkl")

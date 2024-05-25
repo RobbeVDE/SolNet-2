@@ -2,6 +2,12 @@ import pandas as pd
 import numpy as np
 from pvlib import location
 import os
+installation_int = 3
+metadata = pd.read_pickle("Data/Sites/metadata.pkl")
+latitude = metadata.loc[installation_int, "Latitude"]
+longitude = metadata.loc[installation_int, "Longitude"]
+
+
 total_df = pd.DataFrame()
 print(os.getcwd())
 for i in range(1,3):
@@ -54,22 +60,6 @@ print(total_df)
 
 # Only GHI given so use pvlib to calculate GDI and DNI
 
-latitude = 9.93676
-longitude = -84.04388
-site = location.Location(latitude, longitude, tz='UTC')
-times = total_df.index
-solar_pos = site.get_solarposition(times)
-zenith = np.deg2rad(solar_pos['apparent_zenith'])
-
-# dir_surf_irrad = pd.DataFrame(total_df["direct_surface_SW_flux"])
-
-# dir_surf_irrad["zenith"] = zenith
-# dir_surf_irrad["direct_surface_SW_flux"] = dir_surf_irrad["direct_surface_SW_flux"]/np.cos(dir_surf_irrad["zenith"])
-
-# dir_surf_irrad.loc[(dir_surf_irrad.zenith >= np.deg2rad(85)), 'direct_surface_SW_flux'] = 0
-
-# total_df["direct_surface_SW_flux"] = dir_surf_irrad['direct_surface_SW_flux']
-
-# total_df["direct_surface_SW_flux"] = total_df["direct_surface_SW_flux"].div(np.cos(zenith), axis=0, fill_value=0)
+#NOT DONE  FOR COSTA RICA ONLY GHI
 
 total_df.to_pickle("Data/Sites/NWP_2.pkl")
