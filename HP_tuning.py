@@ -76,13 +76,13 @@ def HP_tuning(domain, model):
         sampler = pickle.load(open(f"hyperparameters/samplers/sampler_{domain}_{dataset_name}_{phys}_{TL}.pkl", "rb"))
         print("Using existing sampler.") 
     except: #If there is no sampler present, make a new one
-        sampler = samplers.TPESampler(seed=28)
+        sampler = samplers.RandomSampler(seed=39)
         print("Initialize a new sampler")
 
     study = optuna.create_study(study_name=study_name, storage=storage_name, direction="minimize", 
-                                load_if_exists=True, sampler=sampler, pruner=optuna.pruners.SuccessiveHalvingPruner())
+                                load_if_exists=True, sampler=sampler, pruner=optuna.pruners.MedianPruner(n_warmup_steps=patience))
     try:        
-        study.optimize(objective, n_trials=100)
+        study.optimize(objective, n_trials=500)
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
 
@@ -142,13 +142,14 @@ def HP_tuning(domain, model):
         print("Sampler saved succesfully.")
 
 if __name__ == "__main__":
-    manual_enter = True
+    manual_enter = False
+
     if manual_enter:
         model = int(input("Specify model:\n 0. TL(no phys)               | 4. target(no S, phys)) |  \n 1. TL(phys)                  | 5. TL(era5, no phys)   |  \n 2. TL(no weather cov)        | 6. TL(era5, phys)      | 10. CNN-LSTM ?? \n 3. target(no S, no phys))    | 7. biLSTM              | \n"))
         domain = str(input("Domain: Enter source or target \n"))  # Unique identifier of the study.
         HP_tuning(domain, model)
     else:
-        model_list = [0,1,2,5,6]
+        model_list = [1,2,5,6]
         domain = "source"
         for model in model_list:
             HP_tuning(domain,model)
