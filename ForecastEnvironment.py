@@ -27,10 +27,10 @@ rmse = pd.DataFrame()
 timer = pd.DataFrame()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-ctn_eval = False #Loop trough all models and sites
+ctn_eval = True#Loop trough all models and sites
 if ctn_eval:
-    models = range(9)
-    sites = range(4,9)
+    models = range(6,9)
+    sites = range(9)
     
 else:
     models = [int(input("Specify model:\n 0. TL(no phys)               | 4. target(no S, phys)) | 8. physical \n 1. TL(phys)                  | 5. TL(era5, no phys)   | 9. persistence \n 2. TL(no weather cov)        | 6. TL(era5, phys)      | 10. CNN-LSTM ?? \n 3. target(no S, no phys))    | 7. biLSTM              | 11. ARIMA ?? \n"))]
