@@ -55,7 +55,7 @@ class Training:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         train_data = TensorDataset(X_train.to(self.device), y_train.to(self.device))
-        self.train_loader = DataLoader(train_data, batch_size=batch_size)
+        self.train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
         if (y_test is not None) or (X_test is not None):
             test_data = TensorDataset(X_test.to(self.device), y_test.to(self.device))
@@ -101,6 +101,12 @@ class Training:
         avg_train_error = []
         avg_test_error = []
         state_dict_list = []
+        if self.testing:
+            train_data,test_data = train_test_split(self.total_data, shuffle=True)
+            self.test_loader = DataLoader(test_data, batch_size = self.batch_size)
+            self.train_loader = DataLoader(train_data,batch_size =  self.batch_size, shuffle=True)
+
+
         
         optimizer = getattr(optim, self.optimizer_name)(self.model.parameters(), lr=self.lr, weight_decay=self.wd)
         early_stopper = EarlyStopper(patience=5, min_delta=0.005)

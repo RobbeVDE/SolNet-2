@@ -60,9 +60,9 @@ def target(dataset, features, hp, scale, WFE):
     if hp.trial is None:
         return avg_error, times, forecasts
     else:
-        truth = dataset[31*24:] # 30+1 *24
-        forecast = forecast[30*24:]
-        error = np.mean(np.suare(forecast-truth))
+        truth = dataset['P'].iloc[31*24:].to_numpy() # 30+1 *24
+        forecast = forecasts[30*24:]
+        error = np.mean(np.square(forecast-truth))
         return error
 
 
