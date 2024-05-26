@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scienceplots
 plt.style.use(["science"])
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 cross_validate = False
 ES_option = False # Option to use early stopping
 import optuna

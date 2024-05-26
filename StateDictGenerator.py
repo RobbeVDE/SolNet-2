@@ -8,11 +8,11 @@ import pickle
 import os.path
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-ctn_eval = False #Loop trough all models and sites
+ctn_eval = True #Loop trough all models and sites
 if ctn_eval:
-    models = range(9)
+    models = range(2)
     sites = range(9)
-    HP_tuning = False
+    HP_tuning = True
     if HP_tuning:
         sites = [0]
 else:

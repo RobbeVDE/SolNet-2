@@ -364,7 +364,10 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         times = df.index
         sol_pos = site.get_solarposition(times)
         mask = sol_pos["zenith"] > 85
-        filter_list = ['P', 'downward_surface_SW_flux', 'direct_surface_SW_flux', 'diffuse_surface_SW_flux']
+        if source == "no_weather":
+            filter_list = ['P']
+        else:
+            filter_list = ['P', 'downward_surface_SW_flux', 'direct_surface_SW_flux', 'diffuse_surface_SW_flux']
         df.loc[mask,  filter_list] = 0
         # mask = (df['downward_surface_SW_flux'] - df['diffuse_surface_SW_flux'] - df["direct_surface_SW_flux"]*np.cos(sol_pos["zenith"])).abs().mean()
         # print(mask)
