@@ -29,7 +29,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 ctn_eval = True#Loop trough all models and sites
 if ctn_eval:
-    models = range(9)
+    models = [9]
     sites = range(9)
     
 else:
