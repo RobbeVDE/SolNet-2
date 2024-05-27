@@ -366,6 +366,8 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         mask = sol_pos["zenith"] > 85
         if source == "no_weather":
             filter_list = ['P']
+        elif installation_int == 2 or decomp:
+            filter_list = ['P', "downward_surface_SW_flux"]
         else:
             filter_list = ['P', 'downward_surface_SW_flux', 'direct_surface_SW_flux', 'diffuse_surface_SW_flux']
         df.loc[mask,  filter_list] = 0
