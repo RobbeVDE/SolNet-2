@@ -66,9 +66,13 @@ def target(dataset, features, hp, scale, WFE):
         return error
 
 
-def persistence(dataset):
+def persistence(dataset, gamma, climat):
     infer_timer = Timer()
-    y_forecast = dataset['P_24h_shift']
+    power_diurnal = dataset['P_24h_shift']
+    cs_power = dataset["CS_power"]
+    diurnal_persist = power_diurnal/cs_power.shift(lags)
+    y_forecast = cs_power*(gamma*diurnal_persist+(1-gamma)*climat)
+    y_forecast = y_forecast.fillna(0)
     infer_timer.stop()
     y_truth = dataset['P']
     powers = pd.concat([y_truth, y_forecast], axis=1)
@@ -76,9 +80,8 @@ def persistence(dataset):
     powers['train_month'] = [i//(30*24) for i in range(len(powers.index))] #Our months in training process consists of 30 days 
     error = powers.groupby(powers.train_month).apply(r2_rmse).reset_index()
     error = error['rmse'].to_list()
-    print(error)
     times = {'Inference Time': [infer_timer.elapsed_time()/13]*13} #Just assume it takes same amount of time for each month which makes sense
-    forecasts = list(powers["P_24h_shift"].values)
+    forecasts = list(y_forecast.values)
 
     return error, times, forecasts
 

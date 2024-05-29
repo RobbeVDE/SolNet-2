@@ -95,8 +95,11 @@ for i in models:
         else:
             match i:
                 case 9:
-                    _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", False)
-                    accur, timer, forecasts = md.persistence(eval_dataset)
+                    source_dataset,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", True)
+                    #Find gamma and climatological csindex of power
+                    gamma = source_dataset["P"].iloc[24:].corr(source_dataset["P_24h_shift"].iloc[24:])
+                    climat = (source_dataset["P"]/source_dataset["CS_power"]).mean()
+                    accur, timer, forecasts = md.persistence(eval_dataset, gamma, climat)
                     
                 case 8:
                     _,_,eval_dataset = data_handeler(j, "nwp", "nwp", "nwp", True)
