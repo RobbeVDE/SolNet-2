@@ -74,6 +74,7 @@ def persistence(dataset, gamma, climat):
     y_forecast = cs_power*(gamma*diurnal_persist+(1-gamma)*climat)
     y_forecast = y_forecast.fillna(0)
     infer_timer.stop()
+    y_forecast= y_forecast[24:]
     y_truth = dataset['P']
     powers = pd.concat([y_truth, y_forecast], axis=1)
     powers = powers.iloc[lags:] #Lag values cannot be taken into account
