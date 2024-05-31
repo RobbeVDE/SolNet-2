@@ -17,7 +17,7 @@ from tensors.Tensorisation import Tensorisation
 from scale import Scale
 from pvlib import location
 
-sites = range(9)
+sites = [0,1,4,5,6,7,8]
 nb_years = 3
 warnings. filterwarnings('ignore')
 ftr_file='features/ft_no_phys.pkl' 
