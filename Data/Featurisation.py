@@ -247,7 +247,7 @@ class Featurisation:
     
       
     
-def data_handeler(installation_int = 0, source=None, target=None, eval=None, transform = True, month_source=False, HP_tuning = True, inv_limit = True, decomp = False, nb_source_years=None):
+def data_handeler(installation_int = 0, source=None, target=None, eval=None, transform = True, month_source=False, HP_tuning = True, start_month=None):
     """
     Add explation, maybe more general power function if we use more test setups
     RETURNS source data, target_data, eval_data
@@ -268,7 +268,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
     if month_source:   
         source_range = pd.date_range("2018-08-01", "2018-08-31 23:00", freq='h', tz="UTC")
     else:
-        if nb_source_years is None:
+        if start_month is None:
             if HP_tuning:
                 source_range = pd.date_range("2016-05-01","2019-04-30 23:00", freq='h', tz="UTC")
                 target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC")
@@ -279,19 +279,28 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
                 else:
                     source_range = pd.date_range("2017-05-01", start.tz_localize(None) - pd.Timedelta('1h'), freq='h', tz="UTC")
                     target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC") #Not used for source training so dont care
+            eval_range = pd.date_range(start, end, tz="UTC", freq='h')
         else:
+            if start_month <= 7:
+                start_year=2020
+            else:
+                start_year=2019
+            
+        
+            start_eval = pd.to_datetime(f"{start_year}-{start_month}-01")
+            end_eval = pd.to_datetime(f"{start_year+1}-{start_month}-01") - pd.Timedelta("1h")
+
+           
             end_source = start.tz_localize(None) - pd.Timedelta('1h')
             end_year = end_source.year
-            start_year = end_year- nb_source_years
-            start_source = pd.to_datetime(f'{start_year}-05-01')
+            start_year = end_year-3
+            start_source = pd.to_datetime(f'{start_year}-{start_month}-01')
             source_range = pd.date_range(start_source, end_source, freq='h', tz="UTC")
-
+            eval_range = pd.date_range(start_eval, end_eval, tz="UTC", freq='h')
             target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC") #Not used for source training so dont care
 
-
-   
     
-    eval_range = pd.date_range(start, end, tz="UTC", freq='h')
+    
 
     #Check if running in Google Colab
     try:
@@ -366,7 +375,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         mask = sol_pos["zenith"] > 85
         if source == "no_weather":
             filter_list = ['P']
-        elif installation_int == 2 or decomp:
+        elif installation_int == 2:
             filter_list = ['P', "downward_surface_SW_flux"]
         else:
             filter_list = ['P', 'downward_surface_SW_flux', 'direct_surface_SW_flux', 'diffuse_surface_SW_flux']
@@ -382,7 +391,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
 
 
     if source != 'no_weather':
-        if (transform) and inv_limit:
+        if (transform):
             inv_list = [False, False, True] #Pre-processing only allowed for source_data 
             data.data = data.inverter_limit(inv_limit, inv_list)
 
@@ -395,7 +404,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
 
     if source != "no_weather":
         data.data = data.remove_outliers(tolerance=100, outlier_list=outlier_list)
-        if (installation_int == 2) or (decomp): #NWP Global only had GHI
+        if (installation_int == 2): #NWP Global only had GHI
             data.data = data.decomposition(lat, lon)
     else:
         data.data = data.add_shift('P')
