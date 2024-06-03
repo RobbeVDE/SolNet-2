@@ -17,7 +17,7 @@ from tensors.Tensorisation import Tensorisation
 from scale import Scale
 from pvlib import location
 
-sites = [0,1,4,5,6,7,8]
+sites = [0,1,2,3,4,5,6,7,8]
 nb_years = 3
 warnings. filterwarnings('ignore')
 ftr_file='features/ft_no_phys.pkl' 
@@ -26,7 +26,7 @@ with open(ftr_file, 'rb') as f:
 phys = False
 model = 5
 for site in sites:
-    for start_month in range(3,13):
+    for start_month in range(1,13):
        
         source_data,_,eval_data = data_handeler(site, "era5", "nwp", "nwp", phys, start_month=start_month)
         
