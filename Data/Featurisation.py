@@ -281,7 +281,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
                     target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC") #Not used for source training so dont care
             eval_range = pd.date_range(start, end, tz="UTC", freq='h')
         else:
-            if start_month <= 7:
+            if start_month <= 2:
                 start_year=2020
             else:
                 start_year=2019
@@ -291,10 +291,14 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
             end_eval = pd.to_datetime(f"{start_year+1}-{start_month}-01") - pd.Timedelta("1h")
 
            
-            end_source = start.tz_localize(None) - pd.Timedelta('1h')
+            end_source = start_eval.tz_localize(None) - pd.Timedelta('1h')
             end_year = end_source.year
-            start_year = end_year-3
+            if start_month == 1:
+                start_year = end_year-2
+            else:
+                start_year = end_year-3
             start_source = pd.to_datetime(f'{start_year}-{start_month}-01')
+            print(start_source, end_source)
             source_range = pd.date_range(start_source, end_source, freq='h', tz="UTC")
             eval_range = pd.date_range(start_eval, end_eval, tz="UTC", freq='h')
             target_range = pd.date_range("2019-05-01", "2020-04-30 23:00", freq='h', tz="UTC") #Not used for source training so dont care
@@ -384,7 +388,7 @@ def data_handeler(installation_int = 0, source=None, target=None, eval=None, tra
         # print(mask)
         data[i] = df
     # Add extra variates
-
+    print(data[0]['P'].head(20))
     data = Featurisation(data)
     data.data = data.cyclic_features()
     

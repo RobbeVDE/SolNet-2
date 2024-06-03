@@ -24,15 +24,15 @@ ftr_file='features/ft_no_phys.pkl'
 with open(ftr_file, 'rb') as f:
         features = pickle.load(f)
 phys = False
-model = 0
+model = 5
 for site in sites:
-    for start_month in range(1,13):
+    for start_month in range(3,13):
        
-        source_data,_,eval_data = data_handeler(site, "nwp", "nwp", "nwp", phys, start_month=start_month)
+        source_data,_,eval_data = data_handeler(site, "era5", "nwp", "nwp", phys, start_month=start_month)
         
 
         scale = Scale()
-        scale.load(0, "nwp", phys)
+        scale.load(0, "era5", phys)
 
         hp = hyperparameters_source()
         hp.load(model)
@@ -54,14 +54,14 @@ with open(ftr_file, 'rb') as f:
         features = pickle.load(f)
 
 phys = True
-model = 1
+model = 6
 for site in sites:
     for start_month in range(1,13):
-        source_data,_,eval_data = data_handeler(site, "nwp", "nwp", "nwp", phys, start_month=start_month)
+        source_data,_,eval_data = data_handeler(site, "era5", "nwp", "nwp", phys, start_month=start_month)
        
 
         scale = Scale()
-        scale.load(model, "nwp", phys)
+        scale.load(model, "era5", phys)
 
         hp = hyperparameters_source()
         hp.load(model)
