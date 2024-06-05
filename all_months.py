@@ -16,8 +16,7 @@ import numpy as np
 from tensors.Tensorisation import Tensorisation
 from scale import Scale
 from pvlib import location
-
-sites = [0,1,2,3,4,5,6,7,8]
+sites = [0,1,4,5,6,7,8]
 nb_years = 3
 warnings. filterwarnings('ignore')
 ftr_file='features/ft_no_phys.pkl' 
@@ -25,28 +24,28 @@ with open(ftr_file, 'rb') as f:
         features = pickle.load(f)
 phys = False
 model = 5
-for site in sites:
-    for start_month in range(1,13):
+#for site in sites:
+#    for start_month in range(1,13):
        
-        source_data,_,eval_data = data_handeler(site, "era5", "nwp", "nwp", phys, start_month=start_month)
+ #       source_data,_,eval_data = data_handeler(site, "era5", "nwp", "nwp", phys, start_month=start_month)
         
 
-        scale = Scale()
-        scale.load(0, "era5", phys)
+ #       scale = Scale()
+ #       scale.load(0, "era5", phys)
 
-        hp = hyperparameters_source()
-        hp.load(model)
+ #       hp = hyperparameters_source()
+  #      hp.load(model)
 
 
-        accuracy_source, state_dict, timer = source(source_data, features, hp, scale)
+#        accuracy_source, state_dict, timer = source(source_data, features, hp, scale)
         
-        hp = hyperparameters_target()
-        hp.load(model)
-        hp.source_state_dict = state_dict
-        accur, timer, forecasts = target(eval_data, features, hp, scale, WFE = True)
+#        hp = hyperparameters_target()
+ #       hp.load(model)
+#        hp.source_state_dict = state_dict
+#        accur, timer, forecasts = target(eval_data, features, hp, scale, WFE = True)
         
-        df_forecasts = pd.Series(forecasts, index=eval_data.index[24:], name="P_DA")  
-        df_forecasts.to_pickle(f"sensitivity_analysis/start_month/DA_no_phys_{start_month}_{site}.pkl") 
+#        df_forecasts = pd.Series(forecasts, index=eval_data.index[24:], name="P_DA")  
+#        df_forecasts.to_pickle(f"sensitivity_analysis/start_month/DA_no_phys_{start_month}_{site}.pkl") 
 
     
 ftr_file='features/ft_phys.pkl' 
